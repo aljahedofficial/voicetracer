@@ -508,7 +508,8 @@ def render_step_3_visualize():
     st.markdown("---")
     
     # Get engine data for visualizations
-    orig_metrics = {
+    # For radar chart (expects non-raw keys)
+    radar_orig_metrics = {
         'burstiness': result.original_metrics.burstiness,
         'lexical_diversity': result.original_metrics.lexical_diversity,
         'syntactic_complexity': result.original_metrics.syntactic_complexity,
@@ -516,7 +517,7 @@ def render_step_3_visualize():
         'passive_voice_ratio': 0.3,  # Placeholder
     }
     
-    edited_metrics = {
+    radar_edited_metrics = {
         'burstiness': result.edited_metrics.burstiness,
         'lexical_diversity': result.edited_metrics.lexical_diversity,
         'syntactic_complexity': result.edited_metrics.syntactic_complexity,
@@ -524,12 +525,27 @@ def render_step_3_visualize():
         'passive_voice_ratio': 0.25,  # Placeholder
     }
     
+    # For bar chart (expects _raw keys)
+    bar_orig_metrics = {
+        'burstiness_raw': result.original_metrics.burstiness,
+        'lexical_diversity_raw': result.original_metrics.lexical_diversity,
+        'syntactic_complexity_raw': result.original_metrics.syntactic_complexity,
+        'ai_ism_likelihood_raw': result.original_metrics.ai_ism_likelihood,
+    }
+    
+    bar_edited_metrics = {
+        'burstiness_raw': result.edited_metrics.burstiness,
+        'lexical_diversity_raw': result.edited_metrics.lexical_diversity,
+        'syntactic_complexity_raw': result.edited_metrics.syntactic_complexity,
+        'ai_ism_likelihood_raw': result.edited_metrics.ai_ism_likelihood,
+    }
+    
     try:
         if viz_type == "radar":
             st.markdown("### 6-Axis Radar Chart")
             st.markdown("*Compare your original and edited texts across 6 linguistic dimensions*")
             
-            fig = RadarChartGenerator.create_metric_radar(orig_metrics, edited_metrics)
+            fig = RadarChartGenerator.create_metric_radar(radar_orig_metrics, radar_edited_metrics)
             st.plotly_chart(fig, use_container_width=True)
             
             st.markdown("### What to Look For")
@@ -544,7 +560,7 @@ def render_step_3_visualize():
             st.markdown("### Metric Comparison (Bar Chart)")
             st.markdown("*Side-by-side comparison of key metrics*")
             
-            fig = BarChartGenerator.create_metric_comparison(orig_metrics, edited_metrics)
+            fig = BarChartGenerator.create_metric_comparison(bar_orig_metrics, bar_edited_metrics)
             st.plotly_chart(fig, use_container_width=True)
             
             st.markdown("### Interpretation")
