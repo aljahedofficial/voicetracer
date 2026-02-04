@@ -11,6 +11,14 @@ from pathlib import Path
 from typing import Dict, List, Any, BinaryIO
 from datetime import datetime
 import pandas as pd
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib import colors
 
 
 class ExportMetadata:
@@ -237,30 +245,103 @@ class PDFExporter:
         original_metadata: Dict,
         edited_metadata: Dict,
         **options
-    ) -> BinaryIO:
+    ) -> bytes:
         """
-        Generate PDF report.
-        
-        Note: Full implementation would use reportlab to create
-        a professional 17-page PDF with charts, formatting, etc.
+        Generate PDF report using reportlab.
         
         Returns:
             BytesIO object with PDF data
         """
-        # This is a placeholder - full implementation in final version
-        # Would include:
-        # - Professional formatting
-        # - Embedded charts from visualizations
-        # - Page breaks and sections
-        # - Metrics tables
-        # - Text samples
-        # - Recommendations
-        # - Thesis alignment
-        
         pdf_content = io.BytesIO()
-        pdf_content.write(b'PDF Export - Not yet implemented')
+        doc = SimpleDocTemplate(pdf_content, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#1f77b4'),
+            spaceAfter=30,
+            alignment=WD_PARAGRAPH_ALIGNMENT.CENTER
+        )
+        story.append(Paragraph("VoiceTracer Analysis Report", title_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Metadata
+        story.append(Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Text Statistics
+        story.append(Paragraph("Text Statistics", styles['Heading2']))
+        stats_data = [
+            ['Metric', 'Original', 'Edited', 'Change'],
+            ['Word Count', str(original_metadata.get('word_count', 0)), str(edited_metadata.get('word_count', 0)), 
+             str(edited_metadata.get('word_count', 0) - original_metadata.get('word_count', 0))],
+            ['Character Count', str(original_metadata.get('character_count', 0)), str(edited_metadata.get('character_count', 0)),
+             str(edited_metadata.get('character_count', 0) - original_metadata.get('character_count', 0))],
+            ['Sentence Count', str(original_metadata.get('sentence_count', 0)), str(edited_metadata.get('sentence_count', 0)),
+             str(edited_metadata.get('sentence_count', 0) - original_metadata.get('sentence_count', 0))],
+        ]
+        stats_table = Table(stats_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(stats_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Metrics Comparison
+        story.append(Paragraph("Metric Comparison", styles['Heading2']))
+        metrics_data = [
+            ['Metric', 'Original', 'Edited', 'Change (%)'],
+            ['Burstiness', f"{analysis_result.original_metrics.burstiness:.3f}", 
+             f"{analysis_result.edited_metrics.burstiness:.3f}",
+             f"{analysis_result.metric_deltas.burstiness_pct_change:+.1f}%"],
+            ['Lexical Diversity', f"{analysis_result.original_metrics.lexical_diversity:.3f}",
+             f"{analysis_result.edited_metrics.lexical_diversity:.3f}",
+             f"{analysis_result.metric_deltas.lexical_diversity_pct_change:+.1f}%"],
+            ['Syntactic Complexity', f"{analysis_result.original_metrics.syntactic_complexity:.3f}",
+             f"{analysis_result.edited_metrics.syntactic_complexity:.3f}",
+             f"{analysis_result.metric_deltas.syntactic_complexity_pct_change:+.1f}%"],
+            ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
+             f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
+             f"{analysis_result.metric_deltas.ai_ism_pct_change:+.1f}%"],
+        ]
+        metrics_table = Table(metrics_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+        metrics_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f77b4')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(metrics_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # AI-isms detected
+        if analysis_result.ai_isms:
+            story.append(PageBreak())
+            story.append(Paragraph("AI-isms Detected", styles['Heading2']))
+            for ai_ism in analysis_result.ai_isms[:5]:
+                story.append(Paragraph(f"<b>{ai_ism.get('phrase', 'N/A')}</b> ({ai_ism.get('category', 'N/A')})", styles['Normal']))
+                story.append(Paragraph(f"<i>{ai_ism.get('context', 'N/A')[:100]}</i>", styles['Normal']))
+                story.append(Spacer(1, 0.1*inch))
+        
+        # Build PDF
+        doc.build(story)
         pdf_content.seek(0)
-        return pdf_content
+        return pdf_content.getvalue()
 
 
 class ExcelExporter:
@@ -348,27 +429,120 @@ class DocxExporter:
         original_metadata: Dict,
         edited_metadata: Dict,
         **options
-    ) -> BinaryIO:
+    ) -> bytes:
         """
-        Generate Word document with analysis.
-        
-        Note: Uses python-docx to create editable document
-        with track changes and comment capability.
+        Generate Word document with analysis using python-docx.
         
         Returns:
             BytesIO object with DOCX data
         """
-        # Placeholder - full implementation would use python-docx
-        # to create professional Word documents with:
-        # - Formatted sections
-        # - Tables for metrics
-        # - Tracked changes for text comparison
-        # - Comments and annotations
+        doc = Document()
         
+        # Title
+        title = doc.add_heading('VoiceTracer Analysis Report', 0)
+        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        
+        # Metadata
+        doc.add_paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        doc.add_paragraph()
+        
+        # Text Statistics
+        doc.add_heading('Text Statistics', 1)
+        stats_table = doc.add_table(rows=4, cols=4)
+        stats_table.style = 'Light Grid Accent 1'
+        
+        # Header row
+        header_cells = stats_table.rows[0].cells
+        header_cells[0].text = 'Metric'
+        header_cells[1].text = 'Original'
+        header_cells[2].text = 'Edited'
+        header_cells[3].text = 'Change'
+        
+        # Data rows
+        rows_data = [
+            ['Word Count', str(original_metadata.get('word_count', 0)), str(edited_metadata.get('word_count', 0)),
+             str(edited_metadata.get('word_count', 0) - original_metadata.get('word_count', 0))],
+            ['Character Count', str(original_metadata.get('character_count', 0)), str(edited_metadata.get('character_count', 0)),
+             str(edited_metadata.get('character_count', 0) - original_metadata.get('character_count', 0))],
+            ['Sentence Count', str(original_metadata.get('sentence_count', 0)), str(edited_metadata.get('sentence_count', 0)),
+             str(edited_metadata.get('sentence_count', 0) - original_metadata.get('sentence_count', 0))],
+        ]
+        
+        for i, row_data in enumerate(rows_data, start=1):
+            cells = stats_table.rows[i].cells
+            for j, text in enumerate(row_data):
+                cells[j].text = text
+        
+        doc.add_paragraph()
+        
+        # Metrics Comparison
+        doc.add_heading('Metric Comparison', 1)
+        metrics_table = doc.add_table(rows=5, cols=4)
+        metrics_table.style = 'Light Grid Accent 1'
+        
+        # Header
+        header_cells = metrics_table.rows[0].cells
+        header_cells[0].text = 'Metric'
+        header_cells[1].text = 'Original'
+        header_cells[2].text = 'Edited'
+        header_cells[3].text = 'Change (%)'
+        
+        # Metrics data
+        metrics_rows = [
+            ['Burstiness', f"{analysis_result.original_metrics.burstiness:.3f}", 
+             f"{analysis_result.edited_metrics.burstiness:.3f}",
+             f"{analysis_result.metric_deltas.burstiness_pct_change:+.1f}%"],
+            ['Lexical Diversity', f"{analysis_result.original_metrics.lexical_diversity:.3f}",
+             f"{analysis_result.edited_metrics.lexical_diversity:.3f}",
+             f"{analysis_result.metric_deltas.lexical_diversity_pct_change:+.1f}%"],
+            ['Syntactic Complexity', f"{analysis_result.original_metrics.syntactic_complexity:.3f}",
+             f"{analysis_result.edited_metrics.syntactic_complexity:.3f}",
+             f"{analysis_result.metric_deltas.syntactic_complexity_pct_change:+.1f}%"],
+            ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
+             f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
+             f"{analysis_result.metric_deltas.ai_ism_pct_change:+.1f}%"],
+        ]
+        
+        for i, row_data in enumerate(metrics_rows, start=1):
+            cells = metrics_table.rows[i].cells
+            for j, text in enumerate(row_data):
+                cells[j].text = text
+        
+        doc.add_paragraph()
+        
+        # AI-isms Detected
+        if analysis_result.ai_isms:
+            doc.add_heading('AI-isms Detected', 1)
+            for ai_ism in analysis_result.ai_isms[:5]:
+                phrase = ai_ism.get('phrase', 'N/A')
+                category = ai_ism.get('category', 'N/A')
+                context = ai_ism.get('context', 'N/A')[:150]
+                
+                p = doc.add_paragraph()
+                p.add_run(f"{phrase} ").bold = True
+                p.add_run(f"({category})")
+                
+                doc.add_paragraph(context, style='List Bullet')
+            
+            doc.add_paragraph()
+        
+        # Original Text (if included)
+        if options.get('include_original_text', False):
+            doc.add_page_break()
+            doc.add_heading('Original Text', 1)
+            doc.add_paragraph(doc_pair.original_text)
+        
+        # Edited Text (if included)
+        if options.get('include_edited_text', False):
+            doc.add_page_break()
+            doc.add_heading('Edited Text', 1)
+            doc.add_paragraph(doc_pair.edited_text)
+        
+        # Save to BytesIO
         docx_content = io.BytesIO()
-        docx_content.write(b'DOCX Export - Not yet implemented')
+        doc.save(docx_content)
         docx_content.seek(0)
-        return docx_content
+        return docx_content.getvalue()
 
 
 class PowerPointExporter:
