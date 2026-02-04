@@ -46,9 +46,6 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # Install dependencies
 pip install -e .
 
-# Download NLP model
-python -m spacy download en_core_web_sm
-
 # Run the app
 streamlit run src/app.py
 ```

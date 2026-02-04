@@ -49,7 +49,6 @@ git clone <your-repo> /opt/voicetracer
 # 2. Install dependencies
 cd /opt/voicetracer
 pip install -e .
-python -m spacy download en_core_web_sm
 
 # 3. Create systemd service
 sudo nano /etc/systemd/system/voicetracer.service
