@@ -81,10 +81,12 @@ class CSVExporter:
     @staticmethod
     def export(
         analysis_result,
+        doc_pair,
         original_metadata: Dict,
         edited_metadata: Dict,
         include_original_text: bool = False,
         include_edited_text: bool = False,
+        **options
     ) -> str:
         """
         Generate CSV export with analysis data.
@@ -175,6 +177,7 @@ class JSONExporter:
         edited_metadata: Dict,
         include_original_text: bool = False,
         include_edited_text: bool = False,
+        **options
     ) -> str:
         """
         Generate JSON export with full analysis data.
