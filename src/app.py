@@ -121,6 +121,28 @@ def render_step_1_input():
     Enter your **original** and **AI-edited** texts below. You can paste text, upload files, 
     or load sample texts.
     """)
+
+    # Sample loader (must run before widget creation to avoid session_state conflicts)
+    st.markdown("#### Load Sample Texts")
+    if st.button("📌 Load Example", key="load_example"):
+        st.session_state.original_input = (
+            "The research about artificial intelligence and language learning show that "
+            "students who use AI tools get better grades quickly. However, we must think about "
+            "what happens to their own writing voice. When students rely too much on AI, "
+            "their writing becomes more uniform. It is important that we study this phenomenon. "
+            "The problem is complex because AI tools help students improve grammar, but at same time "
+            "they may lose their unique style."
+        )
+        st.session_state.edited_input = (
+            "Research examining the intersection of artificial intelligence and language acquisition "
+            "demonstrates that students utilizing AI-assisted tools achieve improved academic performance metrics. "
+            "However, it is important to note that significant considerations must be given to the preservation "
+            "of authentic learner voice. Overreliance on artificial intelligence assistance can result in stylistic "
+            "homogenization of written output. Therefore, it is evident that systematic investigation of this phenomenon "
+            "is warranted. The complexity of this issue is noteworthy, as artificial intelligence tools facilitate "
+            "grammatical improvement while simultaneously creating the potential for diminished stylistic individuality."
+        )
+        st.rerun()
     
     col1, col2 = st.columns(2)
     
@@ -155,30 +177,6 @@ def render_step_1_input():
         edit_file = st.file_uploader("Upload edited text", key="edit_file", type=['txt'])
         if edit_file:
             edited_text = edit_file.read().decode('utf-8')
-    
-    # Sample loader
-    st.markdown("#### Load Sample Texts")
-    if st.button("📌 Load Example", key="load_example"):
-        original_text = (
-            "The research about artificial intelligence and language learning show that "
-            "students who use AI tools get better grades quickly. However, we must think about "
-            "what happens to their own writing voice. When students rely too much on AI, "
-            "their writing becomes more uniform. It is important that we study this phenomenon. "
-            "The problem is complex because AI tools help students improve grammar, but at same time "
-            "they may lose their unique style."
-        )
-        edited_text = (
-            "Research examining the intersection of artificial intelligence and language acquisition "
-            "demonstrates that students utilizing AI-assisted tools achieve improved academic performance metrics. "
-            "However, it is important to note that significant considerations must be given to the preservation "
-            "of authentic learner voice. Overreliance on artificial intelligence assistance can result in stylistic "
-            "homogenization of written output. Therefore, it is evident that systematic investigation of this phenomenon "
-            "is warranted. The complexity of this issue is noteworthy, as artificial intelligence tools facilitate "
-            "grammatical improvement while simultaneously creating the potential for diminished stylistic individuality."
-        )
-        st.session_state.original_input = original_text
-        st.session_state.edited_input = edited_text
-        st.rerun()
     
     # Text statistics
     if original_text or edited_text:
