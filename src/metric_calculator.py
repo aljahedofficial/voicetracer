@@ -253,6 +253,12 @@ class MetricComparisonEngine:
             Dict with delta values and percent changes
         """
         deltas = {}
+        range_max_by_metric = {
+            'burstiness': 3.0,
+            'lexical_diversity': 1.0,
+            'syntactic_complexity': 1.0,
+            'ai_ism_likelihood': 100.0,
+        }
         
         for key in ['burstiness', 'lexical_diversity', 'syntactic_complexity', 'ai_ism_likelihood']:
             raw_key = key + '_raw'
@@ -261,7 +267,8 @@ class MetricComparisonEngine:
             edit_val = edited_metrics.get(raw_key, 0.0)
             
             delta = edit_val - orig_val
-            pct_change = ((edit_val - orig_val) / orig_val * 100) if orig_val != 0 else 0
+            scale_max = range_max_by_metric.get(key, 1.0)
+            pct_change = (delta / scale_max * 100) if scale_max else 0.0
             
             deltas[f'{key}_delta'] = round(delta, 3)
             deltas[f'{key}_pct_change'] = round(pct_change, 1)

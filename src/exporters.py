@@ -94,16 +94,16 @@ class CSVExporter:
         """
         output = io.StringIO()
         writer = csv.writer(output)
-        
+
         # Header section
         writer.writerow(['VoiceTracer Analysis Report'])
         writer.writerow(['Generated:', datetime.now().isoformat()])
         writer.writerow([])
-        
+
         # Text statistics
         writer.writerow(['Text Statistics'])
         writer.writerow(['Metric', 'Original', 'Edited', 'Delta', '% Change'])
-        writer.writerow(['Word Count', 
+        writer.writerow(['Word Count',
                         original_metadata.get('word_count', 0),
                         edited_metadata.get('word_count', 0),
                         edited_metadata.get('word_count', 0) - original_metadata.get('word_count', 0),
@@ -119,28 +119,37 @@ class CSVExporter:
                         edited_metadata.get('sentence_count', 0) - original_metadata.get('sentence_count', 0),
                         ''])
         writer.writerow([])
-        
+
         # Metrics
         writer.writerow(['Metric Comparison'])
         writer.writerow(['Metric', 'Original', 'Edited', 'Delta', '% Change'])
-        
+
         metrics_to_export = [
             ('Burstiness', 'burstiness'),
             ('Lexical Diversity', 'lexical_diversity'),
             ('Syntactic Complexity', 'syntactic_complexity'),
             ('AI-ism Likelihood', 'ai_ism_likelihood'),
         ]
-        
+        metrics_delta_map = {
+            'burstiness': (analysis_result.metric_deltas.burstiness_delta,
+                           analysis_result.metric_deltas.burstiness_pct_change),
+            'lexical_diversity': (analysis_result.metric_deltas.lexical_diversity_delta,
+                                  analysis_result.metric_deltas.lexical_diversity_pct_change),
+            'syntactic_complexity': (analysis_result.metric_deltas.syntactic_complexity_delta,
+                                     analysis_result.metric_deltas.syntactic_complexity_pct_change),
+            'ai_ism_likelihood': (analysis_result.metric_deltas.ai_ism_delta,
+                                  analysis_result.metric_deltas.ai_ism_pct_change),
+        }
+
         for label, key in metrics_to_export:
             orig = getattr(analysis_result.original_metrics, key)
             edit = getattr(analysis_result.edited_metrics, key)
-            delta = edit - orig
-            pct = (delta / orig * 100) if orig != 0 else 0
-            
+            delta, pct = metrics_delta_map.get(key, (edit - orig, 0))
+
             writer.writerow([label, round(orig, 3), round(edit, 3), round(delta, 3), f'{pct:+.1f}%'])
-        
+
         writer.writerow([])
-        
+
         # AI-isms detected
         if analysis_result.ai_isms:
             writer.writerow(['AI-isms Detected'])
@@ -151,7 +160,7 @@ class CSVExporter:
                     ai_ism.get('category', ''),
                     ai_ism.get('context', '')[:100],  # Truncate context
                 ])
-        
+
         return output.getvalue()
 
 
