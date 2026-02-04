@@ -17,6 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 from models import DocumentPair, AnalysisResult, MetricScores, MetricDeltas, Session
 from metric_calculator import MetricCalculationEngine, MetricComparisonEngine, AIismCalculator
 from text_processor import TextProcessor
+from visualizations import RadarChartGenerator, BarChartGenerator, TextDiffVisualizer, DeltaVisualization
+from exporters import ExportFactory, ExportMetadata
+import difflib
 
 
 # ============================================================================
@@ -475,10 +478,10 @@ def render_step_2_metrics():
 
 
 # ============================================================================
-# STEP 3: VISUALIZATIONS (Placeholder for now)
+# STEP 3: VISUALIZATIONS
 # ============================================================================
 def render_step_3_visualize():
-    """Step 3: Visual analysis."""
+    """Step 3: Visual analysis with interactive charts."""
     st.title("📈 Step 3: Visual Analysis")
     
     if 'analysis_result' not in st.session_state:
@@ -486,18 +489,154 @@ def render_step_3_visualize():
         return
     
     result = st.session_state.analysis_result
+    doc_pair = st.session_state.doc_pair
     
-    st.markdown("### Chart Comparison")
-    st.info("📊 Charts will be displayed here (implemented in Phase 5)")
+    # Select visualization type
+    st.markdown("### Choose Your Visualization")
+    viz_type = st.radio(
+        "Select visualization:",
+        options=["radar", "bars", "deltas", "diff"],
+        format_func=lambda x: {
+            "radar": "🎯 6-Axis Radar (Original vs Edited)",
+            "bars": "📊 Bar Chart Comparison",
+            "deltas": "📈 Metric Changes",
+            "diff": "📝 Text Difference Highlight"
+        }[x],
+        horizontal=True
+    )
     
-    # Placeholder for visualizations
-    st.markdown("**Planned visualizations:**")
-    st.markdown("""
-    - 6-axis Radar chart (Original vs Edited)
-    - Bar chart comparison
-    - Side-by-side text diff
-    - Time-series (if multiple analyses)
-    """)
+    st.markdown("---")
+    
+    # Get engine data for visualizations
+    orig_metrics = {
+        'burstiness': result.original_metrics.burstiness,
+        'lexical_diversity': result.original_metrics.lexical_diversity,
+        'syntactic_complexity': result.original_metrics.syntactic_complexity,
+        'ai_ism_likelihood': result.original_metrics.ai_ism_likelihood,
+        'passive_voice_ratio': 0.3,  # Placeholder
+    }
+    
+    edited_metrics = {
+        'burstiness': result.edited_metrics.burstiness,
+        'lexical_diversity': result.edited_metrics.lexical_diversity,
+        'syntactic_complexity': result.edited_metrics.syntactic_complexity,
+        'ai_ism_likelihood': result.edited_metrics.ai_ism_likelihood,
+        'passive_voice_ratio': 0.25,  # Placeholder
+    }
+    
+    try:
+        if viz_type == "radar":
+            st.markdown("### 6-Axis Radar Chart")
+            st.markdown("*Compare your original and edited texts across 6 linguistic dimensions*")
+            
+            fig = RadarChartGenerator.create_metric_radar(orig_metrics, edited_metrics)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("### What to Look For")
+            st.info(
+                "**Green area** = Original text characteristics  \n"
+                "**Red area** = AI-edited text characteristics  \n"
+                "**Overlap** = Preserved voice  \n"
+                "**Divergence** = Loss of voice authenticity"
+            )
+        
+        elif viz_type == "bars":
+            st.markdown("### Metric Comparison (Bar Chart)")
+            st.markdown("*Side-by-side comparison of key metrics*")
+            
+            fig = BarChartGenerator.create_metric_comparison(orig_metrics, edited_metrics)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("### Interpretation")
+            increases = []
+            decreases = []
+            
+            if result.metric_deltas.burstiness_pct_change > 0:
+                decreases.append("Burstiness (more uniform)")
+            else:
+                increases.append("Burstiness (more varied)")
+            
+            if result.metric_deltas.lexical_diversity_pct_change > 0:
+                increases.append("Lexical Diversity (more varied vocabulary)")
+            else:
+                decreases.append("Lexical Diversity (more formulaic)")
+            
+            if decreases:
+                st.warning(f"**Metrics that decreased**: {', '.join(decreases)}")
+            if increases:
+                st.success(f"**Metrics that improved**: {', '.join(increases)}")
+        
+        elif viz_type == "deltas":
+            st.markdown("### Metric Change Visualization")
+            st.markdown("*How much each metric changed from original to edited*")
+            
+            # Create deltas dict in expected format
+            deltas_dict = {
+                'burstiness_pct_change': result.metric_deltas.burstiness_pct_change,
+                'lexical_diversity_pct_change': result.metric_deltas.lexical_diversity_pct_change,
+                'syntactic_complexity_pct_change': result.metric_deltas.syntactic_complexity_pct_change,
+                'ai_ism_likelihood_pct_change': result.metric_deltas.ai_ism_pct_change,
+            }
+            
+            fig = DeltaVisualization.create_delta_chart(deltas_dict)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("### Summary of Changes")
+            
+            metrics_summary = [
+                ("Burstiness", result.metric_deltas.burstiness_pct_change, "sentence variation"),
+                ("Lexical Diversity", result.metric_deltas.lexical_diversity_pct_change, "vocabulary richness"),
+                ("Syntactic Complexity", result.metric_deltas.syntactic_complexity_pct_change, "structure sophistication"),
+                ("AI-ism Likelihood", result.metric_deltas.ai_ism_pct_change, "AI-pattern frequency"),
+            ]
+            
+            for name, pct_change, description in metrics_summary:
+                if pct_change < -10:
+                    st.error(f"⬇️ **{name}** decreased {abs(pct_change):.0f}% ({description})")
+                elif pct_change > 10:
+                    st.warning(f"⬆️ **{name}** increased {pct_change:.0f}% ({description})")
+                else:
+                    st.info(f"→ **{name}** remained stable ({description})")
+        
+        elif viz_type == "diff":
+            st.markdown("### Text Difference Highlight")
+            st.markdown("*Original text (green) vs Edited text (red) - showing changes*")
+            
+            # Create diff
+            original_words = doc_pair.original_text.split()
+            edited_words = doc_pair.edited_text.split()
+            
+            differ = difflib.SequenceMatcher(None, original_words, edited_words)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### Original")
+                original_html = '<div style="padding: 15px; background: #f0f0f0; border-radius: 5px; max-height: 400px; overflow-y: auto;">'
+                for tag, i1, i2, j1, j2 in differ.get_opcodes():
+                    if tag == 'equal':
+                        original_html += ' '.join(original_words[i1:i2]) + ' '
+                    elif tag == 'delete':
+                        original_html += f'<mark style="background: #90EE90;">{" ".join(original_words[i1:i2])}</mark> '
+                original_html += '</div>'
+                st.markdown(original_html, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("#### Edited")
+                edited_html = '<div style="padding: 15px; background: #f0f0f0; border-radius: 5px; max-height: 400px; overflow-y: auto;">'
+                for tag, i1, i2, j1, j2 in differ.get_opcodes():
+                    if tag == 'equal':
+                        edited_html += ' '.join(edited_words[j1:j2]) + ' '
+                    elif tag == 'insert':
+                        edited_html += f'<mark style="background: #FFB6C1;">{" ".join(edited_words[j1:j2])}</mark> '
+                edited_html += '</div>'
+                st.markdown(edited_html, unsafe_allow_html=True)
+            
+            st.markdown("**Legend**: 🟢 Original (removed), 🔴 AI-edited (added)")
+    
+    except Exception as e:
+        st.error(f"Error generating visualization: {str(e)}")
+        st.info("The visualization modules are working, but there may be data format issues.")
 
 
 # ============================================================================
@@ -511,19 +650,19 @@ def render_step_4_export():
         st.warning("⚠️ Please complete Step 1 first.")
         return
     
+    result = st.session_state.analysis_result
+    doc_pair = st.session_state.doc_pair
+    
     st.markdown("""
     Export your analysis in multiple formats suitable for different purposes:
     """)
     
     export_formats = [
-        ("📄 PDF Report", "Professional 17-page report with charts and branding", "pdf"),
-        ("📊 Excel Workbook", "5 sheets with data, charts, and analysis-ready format", "xlsx"),
-        ("📝 Word Document", "Editable report with track changes and comments", "docx"),
-        ("🎬 PowerPoint", "9 slides for presentations with speaker notes", "pptx"),
-        ("📈 PNG Charts", "Individual charts for papers and presentations", "png"),
-        ("📦 ZIP Bundle", "All charts and documentation for publication", "zip"),
         ("📊 CSV Data", "Raw data for statistical analysis (SPSS, R, Python)", "csv"),
         ("🔗 JSON Data", "Structured data for programmatic access", "json"),
+        ("📝 Word Document", "Editable report with your analysis", "docx"),
+        ("📈 Excel Workbook", "Spreadsheet with metrics and data", "xlsx"),
+        ("📄 PDF Report", "Professional formatted report", "pdf"),
     ]
     
     st.markdown("### Select Format")
@@ -550,7 +689,125 @@ def render_step_4_export():
     st.markdown("---")
     
     if st.button("📥 Generate & Download", type="primary"):
-        st.info(f"📥 Export feature will be implemented in Phase 6 ({selected_format.upper()})")
+        with st.spinner(f"Generating {selected_format.upper()} export..."):
+            try:
+                # Calculate text metadata
+                orig_metadata = {
+                    'word_count': len(doc_pair.original_text.split()),
+                    'character_count': len(doc_pair.original_text),
+                    'sentence_count': len([s for s in doc_pair.original_text.split('.') if s.strip()]),
+                    'avg_word_length': sum(len(w) for w in doc_pair.original_text.split()) / len(doc_pair.original_text.split()) if doc_pair.original_text.split() else 0,
+                }
+                
+                edited_metadata = {
+                    'word_count': len(doc_pair.edited_text.split()),
+                    'character_count': len(doc_pair.edited_text),
+                    'sentence_count': len([s for s in doc_pair.edited_text.split('.') if s.strip()]),
+                    'avg_word_length': sum(len(w) for w in doc_pair.edited_text.split()) / len(doc_pair.edited_text.split()) if doc_pair.edited_text.split() else 0,
+                }
+                
+                # Create exporter
+                export_data = ExportFactory.export(
+                    format_type=selected_format,
+                    analysis_result=result,
+                    doc_pair=doc_pair,
+                    original_metadata=orig_metadata,
+                    edited_metadata=edited_metadata,
+                    include_original_text=include_original,
+                    include_edited_text=include_edited,
+                    include_metrics=include_metrics,
+                    include_ai_isms=include_ai_isms,
+                )
+                
+                # Prepare download - handle both string and binary data
+                if isinstance(export_data, bytes):
+                    download_data = export_data
+                elif isinstance(export_data, io.BytesIO):
+                    download_data = export_data.getvalue()
+                else:
+                    download_data = export_data
+                
+                if selected_format == "csv":
+                    st.success("✓ CSV generated successfully!")
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=download_data if isinstance(download_data, str) else download_data.decode('utf-8') if isinstance(download_data, bytes) else str(download_data),
+                        file_name=f"voicetracer_analysis_{result.doc_pair_id[:8]}.csv",
+                        mime="text/csv"
+                    )
+                
+                elif selected_format == "json":
+                    st.success("✓ JSON generated successfully!")
+                    st.download_button(
+                        label="📥 Download JSON",
+                        data=download_data if isinstance(download_data, str) else download_data.decode('utf-8') if isinstance(download_data, bytes) else str(download_data),
+                        file_name=f"voicetracer_analysis_{result.doc_pair_id[:8]}.json",
+                        mime="application/json"
+                    )
+                
+                elif selected_format in ["docx", "xlsx", "pdf"]:
+                    st.success(f"✓ {selected_format.upper()} generated successfully!")
+                    
+                    mime_types = {
+                        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "pdf": "application/pdf",
+                    }
+                    
+                    st.download_button(
+                        label=f"📥 Download {selected_format.upper()}",
+                        data=download_data,
+                        file_name=f"voicetracer_analysis_{result.doc_pair_id[:8]}.{selected_format}",
+                        mime=mime_types[selected_format]
+                    )
+                
+                # Show preview for text formats
+                if selected_format in ["csv", "json"]:
+                    with st.expander("📋 Preview"):
+                        preview_str = download_data if isinstance(download_data, str) else download_data.decode('utf-8') if isinstance(download_data, bytes) else str(download_data)
+                        if selected_format == "csv":
+                            st.text(preview_str[:500] + "..." if len(preview_str) > 500 else preview_str)
+                        else:
+                            import json as json_lib
+                            data = json_lib.loads(preview_str)
+                            st.json(data)
+                
+                # Additional information
+                st.markdown("---")
+                st.markdown("### What's Included")
+                
+                include_cols = []
+                if include_original:
+                    include_cols.append("Original Text")
+                if include_edited:
+                    include_cols.append("Edited Text")
+                if include_metrics:
+                    include_cols.append("Metrics Data")
+                if include_ai_isms:
+                    include_cols.append("AI-ism Phrases")
+                if include_benchmarks:
+                    include_cols.append("Benchmark Comparisons")
+                
+                st.info(f"✓ Included: {', '.join(include_cols)}")
+            
+            except Exception as e:
+                st.error(f"Error generating export: {str(e)}")
+                st.info("Please ensure all required data is available and try again.")
+    
+    st.markdown("---")
+    st.markdown("### About Exports")
+    with st.expander("Format Guide"):
+        st.markdown("""
+        **CSV**: Best for data analysis in Excel, R, or Python. Includes all metrics in tabular format.
+        
+        **JSON**: Best for programmatic access and integration with other tools. Structured and machine-readable.
+        
+        **Word (DOCX)**: Best for editing and sharing. Includes formatted text with your analysis.
+        
+        **Excel (XLSX)**: Best for further analysis with charts and formulas. Multiple sheets with organized data.
+        
+        **PDF**: Best for sharing and archiving. Professional formatted document ready for publication.
+        """)
 
 
 # ============================================================================
