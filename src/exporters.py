@@ -104,7 +104,7 @@ class CSVExporter:
 
         # Text statistics
         writer.writerow(['Text Statistics'])
-        writer.writerow(['Metric', 'Original', 'Edited', 'Delta', '% Change'])
+        writer.writerow(['Metric', 'Original', 'Edited', 'Delta', 'Absolute Shift (Δ)'])
         writer.writerow(['Word Count',
                         original_metadata.get('word_count', 0),
                         edited_metadata.get('word_count', 0),
@@ -124,7 +124,7 @@ class CSVExporter:
 
         # Metrics
         writer.writerow(['Metric Comparison'])
-        writer.writerow(['Metric', 'Original', 'Edited', 'Delta', '% Change'])
+        writer.writerow(['Metric', 'Original', 'Edited', 'Delta', 'Absolute Shift (Δ)'])
 
         metrics_to_export = [
             ('Burstiness', 'burstiness'),
@@ -313,19 +313,19 @@ class PDFExporter:
         # Metrics Comparison
         story.append(Paragraph("Metric Comparison", styles['Heading2']))
         metrics_data = [
-            ['Metric', 'Original', 'Edited', 'Change (%)'],
+            ['Metric', 'Original', 'Edited', 'Absolute Shift (Δ)'],
             ['Burstiness', f"{analysis_result.original_metrics.burstiness:.3f}", 
              f"{analysis_result.edited_metrics.burstiness:.3f}",
-             f"{analysis_result.metric_deltas.burstiness_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.burstiness_delta:+.3f}"],
             ['Lexical Diversity', f"{analysis_result.original_metrics.lexical_diversity:.3f}",
              f"{analysis_result.edited_metrics.lexical_diversity:.3f}",
-             f"{analysis_result.metric_deltas.lexical_diversity_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.lexical_diversity_delta:+.3f}"],
             ['Syntactic Complexity', f"{analysis_result.original_metrics.syntactic_complexity:.3f}",
              f"{analysis_result.edited_metrics.syntactic_complexity:.3f}",
-             f"{analysis_result.metric_deltas.syntactic_complexity_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.syntactic_complexity_delta:+.3f}"],
             ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
-             f"{analysis_result.metric_deltas.ai_ism_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.ai_ism_delta:+.1f}"],
         ]
         metrics_table = Table(metrics_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
         metrics_table.setStyle(TableStyle([
@@ -398,11 +398,11 @@ class ExcelExporter:
                     analysis_result.edited_metrics.syntactic_complexity,
                     analysis_result.edited_metrics.ai_ism_likelihood,
                 ],
-                'Change (%)': [
-                    analysis_result.metric_deltas.burstiness_pct_change,
-                    analysis_result.metric_deltas.lexical_diversity_pct_change,
-                    analysis_result.metric_deltas.syntactic_complexity_pct_change,
-                    analysis_result.metric_deltas.ai_ism_pct_change,
+                'Absolute Shift (Δ)': [
+                    analysis_result.metric_deltas.burstiness_delta,
+                    analysis_result.metric_deltas.lexical_diversity_delta,
+                    analysis_result.metric_deltas.syntactic_complexity_delta,
+                    analysis_result.metric_deltas.ai_ism_delta,
                 ],
             }
             df_summary = pd.DataFrame(summary_data)
@@ -497,22 +497,22 @@ class DocxExporter:
         header_cells[0].text = 'Metric'
         header_cells[1].text = 'Original'
         header_cells[2].text = 'Edited'
-        header_cells[3].text = 'Change (%)'
+        header_cells[3].text = 'Absolute Shift (Δ)'
         
         # Metrics data
         metrics_rows = [
             ['Burstiness', f"{analysis_result.original_metrics.burstiness:.3f}", 
              f"{analysis_result.edited_metrics.burstiness:.3f}",
-             f"{analysis_result.metric_deltas.burstiness_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.burstiness_delta:+.3f}"],
             ['Lexical Diversity', f"{analysis_result.original_metrics.lexical_diversity:.3f}",
              f"{analysis_result.edited_metrics.lexical_diversity:.3f}",
-             f"{analysis_result.metric_deltas.lexical_diversity_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.lexical_diversity_delta:+.3f}"],
             ['Syntactic Complexity', f"{analysis_result.original_metrics.syntactic_complexity:.3f}",
              f"{analysis_result.edited_metrics.syntactic_complexity:.3f}",
-             f"{analysis_result.metric_deltas.syntactic_complexity_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.syntactic_complexity_delta:+.3f}"],
             ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
-             f"{analysis_result.metric_deltas.ai_ism_pct_change:+.1f}%"],
+             f"{analysis_result.metric_deltas.ai_ism_delta:+.1f}"],
         ]
         
         for i, row_data in enumerate(metrics_rows, start=1):

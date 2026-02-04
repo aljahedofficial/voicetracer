@@ -335,15 +335,15 @@ def render_step_2_metrics():
     met_col1, met_col2, met_col3, met_col4 = st.columns(4)
     
     metrics_info = [
-        ("Burstiness", result.original_metrics.burstiness, result.edited_metrics.burstiness, result.metric_deltas.burstiness_pct_change),
-        ("Lexical Diversity", result.original_metrics.lexical_diversity, result.edited_metrics.lexical_diversity, result.metric_deltas.lexical_diversity_pct_change),
-        ("Syntactic Complexity", result.original_metrics.syntactic_complexity, result.edited_metrics.syntactic_complexity, result.metric_deltas.syntactic_complexity_pct_change),
-        ("AI-ism Likelihood", result.original_metrics.ai_ism_likelihood / 100, result.edited_metrics.ai_ism_likelihood / 100, result.metric_deltas.ai_ism_pct_change),
+        ("Burstiness", result.original_metrics.burstiness, result.edited_metrics.burstiness, result.metric_deltas.burstiness_delta),
+        ("Lexical Diversity", result.original_metrics.lexical_diversity, result.edited_metrics.lexical_diversity, result.metric_deltas.lexical_diversity_delta),
+        ("Syntactic Complexity", result.original_metrics.syntactic_complexity, result.edited_metrics.syntactic_complexity, result.metric_deltas.syntactic_complexity_delta),
+        ("AI-ism Likelihood", result.original_metrics.ai_ism_likelihood, result.edited_metrics.ai_ism_likelihood, result.metric_deltas.ai_ism_delta),
     ]
     
     cols = [met_col1, met_col2, met_col3, met_col4]
     
-    for col, (name, orig, edit, pct) in zip(cols, metrics_info):
+    for col, (name, orig, edit, delta) in zip(cols, metrics_info):
         with col:
             st.markdown(f"**{name}**")
             st.metric(
@@ -353,7 +353,7 @@ def render_step_2_metrics():
             st.metric(
                 label="Edited",
                 value=f"{edit:.2f}",
-                delta=f"{pct:+.0f}%"
+                delta=f"{delta:+.3f}" if name != "AI-ism Likelihood" else f"{delta:+.1f}"
             )
     
     # Detailed explanations with tabs
@@ -377,7 +377,7 @@ def render_step_2_metrics():
             st.metric("Original", f"{result.original_metrics.burstiness:.3f}")
         with col2:
             st.metric("Edited", f"{result.edited_metrics.burstiness:.3f}", 
-                     delta=f"{result.metric_deltas.burstiness_pct_change:+.1f}%")
+                     delta=f"{result.metric_deltas.burstiness_delta:+.3f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -405,7 +405,7 @@ def render_step_2_metrics():
             st.metric("Original", f"{result.original_metrics.lexical_diversity:.3f}")
         with col2:
             st.metric("Edited", f"{result.edited_metrics.lexical_diversity:.3f}",
-                     delta=f"{result.metric_deltas.lexical_diversity_pct_change:+.1f}%")
+                     delta=f"{result.metric_deltas.lexical_diversity_delta:+.3f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -432,7 +432,7 @@ def render_step_2_metrics():
             st.metric("Original", f"{result.original_metrics.syntactic_complexity:.3f}")
         with col2:
             st.metric("Edited", f"{result.edited_metrics.syntactic_complexity:.3f}",
-                     delta=f"{result.metric_deltas.syntactic_complexity_pct_change:+.1f}%")
+                     delta=f"{result.metric_deltas.syntactic_complexity_delta:+.3f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -459,7 +459,7 @@ def render_step_2_metrics():
             st.metric("Original", f"{result.original_metrics.ai_ism_likelihood:.0f}")
         with col2:
             st.metric("Edited", f"{result.edited_metrics.ai_ism_likelihood:.0f}",
-                     delta=f"{result.metric_deltas.ai_ism_pct_change:+.1f}%")
+                     delta=f"{result.metric_deltas.ai_ism_delta:+.1f}")
         
         st.markdown("#### AI-isms Detected")
         if result.ai_isms:
@@ -567,12 +567,12 @@ def render_step_3_visualize():
             increases = []
             decreases = []
             
-            if result.metric_deltas.burstiness_pct_change > 0:
+            if result.metric_deltas.burstiness_delta > 0:
                 decreases.append("Burstiness (more uniform)")
             else:
                 increases.append("Burstiness (more varied)")
             
-            if result.metric_deltas.lexical_diversity_pct_change > 0:
+            if result.metric_deltas.lexical_diversity_delta > 0:
                 increases.append("Lexical Diversity (more varied vocabulary)")
             else:
                 decreases.append("Lexical Diversity (more formulaic)")
@@ -583,15 +583,15 @@ def render_step_3_visualize():
                 st.success(f"**Metrics that improved**: {', '.join(increases)}")
         
         elif viz_type == "deltas":
-            st.markdown("### Metric Change Visualization")
-            st.markdown("*How much each metric changed from original to edited*")
+            st.markdown("### Metric Shift Visualization")
+            st.markdown("*Absolute shift for each metric from original to edited*")
             
             # Create deltas dict in expected format
             deltas_dict = {
-                'burstiness_pct_change': result.metric_deltas.burstiness_pct_change,
-                'lexical_diversity_pct_change': result.metric_deltas.lexical_diversity_pct_change,
-                'syntactic_complexity_pct_change': result.metric_deltas.syntactic_complexity_pct_change,
-                'ai_ism_likelihood_pct_change': result.metric_deltas.ai_ism_pct_change,
+                'burstiness_pct_change': result.metric_deltas.burstiness_delta,
+                'lexical_diversity_pct_change': result.metric_deltas.lexical_diversity_delta,
+                'syntactic_complexity_pct_change': result.metric_deltas.syntactic_complexity_delta,
+                'ai_ism_likelihood_pct_change': result.metric_deltas.ai_ism_delta,
             }
             
             fig = DeltaVisualization.create_delta_chart(deltas_dict)
@@ -600,17 +600,17 @@ def render_step_3_visualize():
             st.markdown("### Summary of Changes")
             
             metrics_summary = [
-                ("Burstiness", result.metric_deltas.burstiness_pct_change, "sentence variation"),
-                ("Lexical Diversity", result.metric_deltas.lexical_diversity_pct_change, "vocabulary richness"),
-                ("Syntactic Complexity", result.metric_deltas.syntactic_complexity_pct_change, "structure sophistication"),
-                ("AI-ism Likelihood", result.metric_deltas.ai_ism_pct_change, "AI-pattern frequency"),
+                ("Burstiness", result.metric_deltas.burstiness_delta, "sentence variation"),
+                ("Lexical Diversity", result.metric_deltas.lexical_diversity_delta, "vocabulary richness"),
+                ("Syntactic Complexity", result.metric_deltas.syntactic_complexity_delta, "structure sophistication"),
+                ("AI-ism Likelihood", result.metric_deltas.ai_ism_delta, "AI-pattern frequency"),
             ]
             
             for name, pct_change, description in metrics_summary:
-                if pct_change < -10:
-                    st.error(f"⬇️ **{name}** decreased {abs(pct_change):.0f}% ({description})")
-                elif pct_change > 10:
-                    st.warning(f"⬆️ **{name}** increased {pct_change:.0f}% ({description})")
+                if pct_change < 0:
+                    st.error(f"⬇️ **{name}** decreased {abs(pct_change):.3f} ({description})")
+                elif pct_change > 0:
+                    st.warning(f"⬆️ **{name}** increased {pct_change:.3f} ({description})")
                 else:
                     st.info(f"→ **{name}** remained stable ({description})")
         

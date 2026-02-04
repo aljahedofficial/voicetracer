@@ -183,15 +183,15 @@ class DeltaVisualization:
                 x=metric_names,
                 y=changes_pct,
                 marker_color=colors,
-                text=[f'{x:+.1f}%' for x in changes_pct],
+                text=[f'{x:+.3f}' for x in changes_pct],
                 textposition='auto',
             )
         ])
         
         fig.update_layout(
-            title='Metric Changes (Original → Edited)',
+            title='Metric Shifts (Original → Edited)',
             xaxis_title='Metric',
-            yaxis_title='Percent Change (%)',
+            yaxis_title='Absolute Shift (Δ)',
             height=400,
             hovermode='x unified',
             shapes=[
