@@ -228,11 +228,16 @@ class TestExportValidation:
     def test_csv_export_format(self):
         """Test CSV export produces valid format."""
         from exporters import CSVExporter
-        from models import AnalysisResult, MetricScores, MetricDeltas
+        from models import DocumentPair, AnalysisResult, MetricScores, MetricDeltas
         
         # Mock objects
+        doc_pair = DocumentPair(
+            original_text="Original text here.",
+            edited_text="Edited text here."
+        )
+        
         result = AnalysisResult(
-            doc_pair_id="test",
+            doc_pair_id=doc_pair.id,
             original_metrics=MetricScores(
                 burstiness=1.2,
                 lexical_diversity=0.65,
@@ -263,7 +268,7 @@ class TestExportValidation:
             'sentence_count': 5,
         }
         
-        csv_output = CSVExporter.export(result, metadata, metadata)
+        csv_output = CSVExporter.export(result, doc_pair, metadata, metadata)
         assert isinstance(csv_output, str)
         assert "VoiceTracer" in csv_output
         assert "Burstiness" in csv_output
