@@ -20,6 +20,7 @@ from text_processor import TextProcessor
 from visualizations import RadarChartGenerator, BarChartGenerator, TextDiffVisualizer, DeltaVisualization, BurstinessVisualization, IndividualMetricCharts
 from exporters import ExportFactory, ExportMetadata
 import difflib
+import html
 
 
 # ============================================================================
@@ -912,14 +913,19 @@ def render_step_3_visualize():
             
             col1, col2 = st.columns(2)
             
+            def _render_words(words: list[str]) -> str:
+                return " ".join(html.escape(w) for w in words)
+
             with col1:
                 st.markdown("#### Original")
                 original_html = '<div style="padding: 15px; background: #f0f0f0; border-radius: 5px; max-height: 400px; overflow-y: auto;">'
                 for tag, i1, i2, j1, j2 in differ.get_opcodes():
                     if tag == 'equal':
-                        original_html += ' '.join(original_words[i1:i2]) + ' '
+                        original_html += _render_words(original_words[i1:i2]) + ' '
                     elif tag == 'delete':
-                        original_html += f'<mark style="background: #90EE90;">{" ".join(original_words[i1:i2])}</mark> '
+                        original_html += f'<mark style="background: #90EE90;">{_render_words(original_words[i1:i2])}</mark> '
+                    elif tag == 'replace':
+                        original_html += f'<mark style="background: #FFE08A;">{_render_words(original_words[i1:i2])}</mark> '
                 original_html += '</div>'
                 st.markdown(original_html, unsafe_allow_html=True)
             
@@ -928,13 +934,15 @@ def render_step_3_visualize():
                 edited_html = '<div style="padding: 15px; background: #f0f0f0; border-radius: 5px; max-height: 400px; overflow-y: auto;">'
                 for tag, i1, i2, j1, j2 in differ.get_opcodes():
                     if tag == 'equal':
-                        edited_html += ' '.join(edited_words[j1:j2]) + ' '
+                        edited_html += _render_words(edited_words[j1:j2]) + ' '
                     elif tag == 'insert':
-                        edited_html += f'<mark style="background: #FFB6C1;">{" ".join(edited_words[j1:j2])}</mark> '
+                        edited_html += f'<mark style="background: #FFB6C1;">{_render_words(edited_words[j1:j2])}</mark> '
+                    elif tag == 'replace':
+                        edited_html += f'<mark style="background: #FFD1B3;">{_render_words(edited_words[j1:j2])}</mark> '
                 edited_html += '</div>'
                 st.markdown(edited_html, unsafe_allow_html=True)
             
-            st.markdown("**Legend**: 🟢 Original (removed), 🔴 AI-edited (added)")
+            st.markdown("**Legend**: 🟢 Original removed, 🟠 Original replaced, 🔴 AI-edited added, 🟤 AI-edited replaced")
     
     except Exception as e:
         st.error(f"Error generating visualization: {str(e)}")
