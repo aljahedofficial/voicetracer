@@ -14,7 +14,7 @@ import io
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from models import DocumentPair, AnalysisResult, MetricScores, MetricDeltas, Session
+from models import DocumentPair, AnalysisResult, MetricScores, MetricDeltas, Session, DEFAULT_BENCHMARKS
 from metric_calculator import MetricCalculationEngine, MetricComparisonEngine, AIismCalculator
 from text_processor import TextProcessor
 from visualizations import RadarChartGenerator, BarChartGenerator, TextDiffVisualizer, DeltaVisualization, BurstinessVisualization, IndividualMetricCharts
@@ -35,6 +35,153 @@ def _safe_metric(metrics: dict, raw_key: str, fallback_key: str = None, default:
     if fallback_key and fallback_key in metrics:
         return metrics[fallback_key]
     return default
+
+
+def _normalize_standard_value(metric_key: str, value: float) -> float:
+    if metric_key == "syntactic_complexity" and value > 1.0:
+        return min(value / 30.0, 1.0)
+    return value
+
+
+def _get_calibration_defaults() -> dict:
+    benchmarks = {b.name: b for b in DEFAULT_BENCHMARKS}
+    human = benchmarks.get("L2 Unassisted Writing")
+    ai = benchmarks.get("AI-Edited Text (ChatGPT)")
+
+    defaults = {
+        "human": {
+            "burstiness": 1.20,
+            "lexical_diversity": 0.55,
+            "syntactic_complexity": 0.55,
+            "ai_ism_likelihood": 5.0,
+            "function_word_ratio": 0.50,
+            "discourse_marker_density": 8.0,
+            "information_density": 0.58,
+            "epistemic_hedging": 0.09,
+        },
+        "ai": {
+            "burstiness": 0.80,
+            "lexical_diversity": 0.42,
+            "syntactic_complexity": 0.55,
+            "ai_ism_likelihood": 78.0,
+            "function_word_ratio": 0.60,
+            "discourse_marker_density": 18.0,
+            "information_density": 0.42,
+            "epistemic_hedging": 0.04,
+        },
+    }
+
+    if human:
+        defaults["human"].update({
+            "burstiness": human.burstiness,
+            "lexical_diversity": human.lexical_diversity,
+            "syntactic_complexity": _normalize_standard_value("syntactic_complexity", human.syntactic_complexity),
+            "ai_ism_likelihood": human.ai_ism_likelihood,
+            "function_word_ratio": human.function_word_ratio,
+            "discourse_marker_density": human.discourse_marker_density,
+            "information_density": human.information_density,
+            "epistemic_hedging": human.epistemic_hedging,
+        })
+    if ai:
+        defaults["ai"].update({
+            "burstiness": ai.burstiness,
+            "lexical_diversity": ai.lexical_diversity,
+            "syntactic_complexity": _normalize_standard_value("syntactic_complexity", ai.syntactic_complexity),
+            "ai_ism_likelihood": ai.ai_ism_likelihood,
+            "function_word_ratio": ai.function_word_ratio,
+            "discourse_marker_density": ai.discourse_marker_density,
+            "information_density": ai.information_density,
+            "epistemic_hedging": ai.epistemic_hedging,
+        })
+
+    return defaults
+
+
+def _ensure_calibration_state() -> None:
+    if "calibration_values" not in st.session_state:
+        st.session_state.calibration_values = _get_calibration_defaults()
+
+
+def _calibration_specs() -> list[dict]:
+    return [
+        {"label": "Burstiness", "key": "burstiness", "min": 0.0, "max": 3.0, "step": 0.01, "fmt": "{:.2f}"},
+        {"label": "Lexical Diversity", "key": "lexical_diversity", "min": 0.0, "max": 1.0, "step": 0.01, "fmt": "{:.2f}"},
+        {"label": "Syntactic Complexity", "key": "syntactic_complexity", "min": 0.0, "max": 1.0, "step": 0.01, "fmt": "{:.2f}"},
+        {"label": "AI-ism Likelihood", "key": "ai_ism_likelihood", "min": 0.0, "max": 100.0, "step": 1.0, "fmt": "{:.0f}"},
+        {"label": "Function Word Ratio", "key": "function_word_ratio", "min": 0.0, "max": 1.0, "step": 0.01, "fmt": "{:.2f}"},
+        {"label": "Discourse Marker Density", "key": "discourse_marker_density", "min": 0.0, "max": 30.0, "step": 0.5, "fmt": "{:.1f}"},
+        {"label": "Information Density", "key": "information_density", "min": 0.0, "max": 1.0, "step": 0.01, "fmt": "{:.2f}"},
+        {"label": "Epistemic Hedging", "key": "epistemic_hedging", "min": 0.0, "max": 0.30, "step": 0.01, "fmt": "{:.2f}"},
+    ]
+
+
+def render_calibration_panel(panel_key: str, expanded: bool = False) -> dict:
+    _ensure_calibration_state()
+    calib = st.session_state.calibration_values
+
+    with st.expander("Manual Calibration", expanded=expanded):
+        st.caption(
+            "Adjust the standard values used for human writing and AI-generated writing. "
+            "Settings are saved for this session only."
+        )
+
+        updated_human = {}
+        updated_ai = {}
+        for spec in _calibration_specs():
+            col1, col2 = st.columns(2)
+            with col1:
+                updated_human[spec["key"]] = st.slider(
+                    f"{spec['label']} (Human standard)",
+                    min_value=spec["min"],
+                    max_value=spec["max"],
+                    value=float(calib["human"][spec["key"]]),
+                    step=spec["step"],
+                    key=f"{panel_key}_human_{spec['key']}",
+                )
+            with col2:
+                updated_ai[spec["key"]] = st.slider(
+                    f"{spec['label']} (AI standard)",
+                    min_value=spec["min"],
+                    max_value=spec["max"],
+                    value=float(calib["ai"][spec["key"]]),
+                    step=spec["step"],
+                    key=f"{panel_key}_ai_{spec['key']}",
+                )
+
+        st.session_state.calibration_values = {
+            "human": updated_human,
+            "ai": updated_ai,
+        }
+
+    return st.session_state.calibration_values
+
+
+def render_standard_legend(metric_key: str, label: str, fmt: str) -> None:
+    _ensure_calibration_state()
+    human_val = st.session_state.calibration_values["human"].get(metric_key, 0.0)
+    ai_val = st.session_state.calibration_values["ai"].get(metric_key, 0.0)
+    st.caption(
+        f"Standard values for {label}: Human writing = {fmt.format(human_val)}, "
+        f"AI-generated writing = {fmt.format(ai_val)}"
+    )
+
+
+def render_standard_legend_table(title: str = "Standard Values Legend") -> None:
+    _ensure_calibration_state()
+    rows = []
+    for spec in _calibration_specs():
+        metric_key = spec["key"]
+        rows.append({
+            "Metric": spec["label"],
+            "Human writing": spec["fmt"].format(
+                st.session_state.calibration_values["human"].get(metric_key, 0.0)
+            ),
+            "AI-generated writing": spec["fmt"].format(
+                st.session_state.calibration_values["ai"].get(metric_key, 0.0)
+            ),
+        })
+    st.markdown(f"#### {title}")
+    st.table(rows)
 
 
 def extract_text_from_txt(file) -> str:
@@ -358,6 +505,8 @@ def render_step_2_metrics():
         return
     
     result = st.session_state.analysis_result
+
+    render_calibration_panel("step2_metrics")
     
     st.markdown("### Quick Summary")
     st.markdown("Compare your metrics across 8 core dimensions:")
@@ -475,6 +624,8 @@ def render_step_2_metrics():
         with col2:
             st.metric("Edited", f"{result.edited_metrics.burstiness:.3f}", 
                      delta=f"{result.metric_deltas.burstiness_delta:+.3f}")
+
+        render_standard_legend("burstiness", "Burstiness", "{:.2f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -503,6 +654,8 @@ def render_step_2_metrics():
         with col2:
             st.metric("Edited", f"{result.edited_metrics.lexical_diversity:.3f}",
                      delta=f"{result.metric_deltas.lexical_diversity_delta:+.3f}")
+
+        render_standard_legend("lexical_diversity", "Lexical Diversity", "{:.2f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -530,6 +683,8 @@ def render_step_2_metrics():
         with col2:
             st.metric("Edited", f"{result.edited_metrics.syntactic_complexity:.3f}",
                      delta=f"{result.metric_deltas.syntactic_complexity_delta:+.3f}")
+
+        render_standard_legend("syntactic_complexity", "Syntactic Complexity", "{:.2f}")
         
         st.markdown("#### Why It Changed")
         st.success(
@@ -557,6 +712,8 @@ def render_step_2_metrics():
         with col2:
             st.metric("Edited", f"{result.edited_metrics.ai_ism_likelihood:.0f}",
                      delta=f"{result.metric_deltas.ai_ism_delta:+.1f}")
+
+        render_standard_legend("ai_ism_likelihood", "AI-ism Likelihood", "{:.0f}")
         
         st.markdown("#### AI-isms Detected")
         if result.ai_isms:
@@ -591,6 +748,8 @@ def render_step_2_metrics():
                 delta=f"{result.metric_deltas.function_word_ratio_delta:+.3f}",
             )
 
+        render_standard_legend("function_word_ratio", "Function Word Ratio", "{:.2f}")
+
         st.markdown("#### Why It Changed")
         st.success(
             "AI editors tend to add function words to smooth flow and grammar. "
@@ -620,6 +779,8 @@ def render_step_2_metrics():
                 f"{result.edited_metrics.discourse_marker_density:.2f}",
                 delta=f"{result.metric_deltas.discourse_marker_density_delta:+.2f}",
             )
+
+        render_standard_legend("discourse_marker_density", "Discourse Marker Density", "{:.1f}")
 
         st.markdown("#### Why It Changed")
         st.success(
@@ -651,6 +812,8 @@ def render_step_2_metrics():
                 delta=f"{result.metric_deltas.information_density_delta:+.3f}",
             )
 
+        render_standard_legend("information_density", "Information Density", "{:.2f}")
+
         st.markdown("#### Why It Changed")
         st.success(
             "AI often expands sentences with generic phrasing. "
@@ -679,6 +842,8 @@ def render_step_2_metrics():
                 f"{result.edited_metrics.epistemic_hedging:.3f}",
                 delta=f"{result.metric_deltas.epistemic_hedging_delta:+.3f}",
             )
+
+        render_standard_legend("epistemic_hedging", "Epistemic Hedging", "{:.2f}")
 
         st.markdown("#### Why It Changed")
         st.success(
@@ -737,9 +902,13 @@ def render_step_3_visualize():
         if viz_type == "radar":
             st.markdown("### 8-Axis Radar Chart")
             st.markdown("*Compare your original and edited texts across 8 linguistic dimensions*")
+
+            render_calibration_panel("viz_radar")
             
             fig = RadarChartGenerator.create_metric_radar(radar_orig_metrics, radar_edited_metrics)
             st.plotly_chart(fig, use_container_width=True)
+
+            render_standard_legend_table("Human vs AI Standards")
             
             st.markdown("### What to Look For")
             st.info(
@@ -753,21 +922,70 @@ def render_step_3_visualize():
             st.markdown("### Individual Metric Charts")
             st.markdown("*Each metric shown as its own comparison chart*")
 
+            render_calibration_panel("viz_individual")
+
             panels = IndividualMetricCharts.create_metric_panels(bar_orig_metrics, bar_edited_metrics)
             for idx in range(0, len(panels), 2):
                 cols = st.columns(2)
                 for col, (_, fig) in zip(cols, panels[idx:idx + 2]):
                     with col:
                         st.plotly_chart(fig, use_container_width=True)
+
+            render_standard_legend_table("Human vs AI Standards")
         
         elif viz_type == "burstiness":
             st.markdown("### Syntactic Burstiness")
             st.markdown("*Word count per sentence reveals writing patterns*")
+
+            render_calibration_panel("viz_burstiness")
+
+            threshold_defaults = BurstinessVisualization._get_burstiness_thresholds()
+            with st.expander("Heuristic Calibration", expanded=False):
+                st.caption(
+                    "Adjust thresholds to see how they affect burstiness labeling. "
+                    "Changes apply to this view only."
+                )
+                ai_cutoff_override = st.slider(
+                    "CV Threshold (AI cutoff)",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=threshold_defaults.get("ai_cutoff", 0.34),
+                    step=0.01,
+                )
+                human_cutoff_override = st.slider(
+                    "CV Threshold (Human cutoff)",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=threshold_defaults.get("human_cutoff", 0.45),
+                    step=0.01,
+                )
+                delta_cutoff_override = st.slider(
+                    "Calibration Threshold (delta)",
+                    min_value=0.0,
+                    max_value=0.50,
+                    value=threshold_defaults.get("delta_cutoff", 0.08),
+                    step=0.01,
+                )
+                if human_cutoff_override <= ai_cutoff_override:
+                    st.warning("Human cutoff should be higher than AI cutoff.")
+                st.caption(
+                    "Standard: "
+                    f"ai_cutoff={threshold_defaults.get('ai_cutoff', 0.34):.2f}, "
+                    f"human_cutoff={threshold_defaults.get('human_cutoff', 0.45):.2f}, "
+                    f"delta_cutoff={threshold_defaults.get('delta_cutoff', 0.08):.2f}"
+                )
+
+            render_standard_legend("burstiness", "Burstiness", "{:.2f}")
             
             # Generate burstiness visualizations
             bar_fig, stats = BurstinessVisualization.create_sentence_length_bars(
-                doc_pair.original_text, 
-                doc_pair.edited_text
+                doc_pair.original_text,
+                doc_pair.edited_text,
+                threshold_overrides={
+                    "ai_cutoff": ai_cutoff_override,
+                    "human_cutoff": human_cutoff_override,
+                    "delta_cutoff": delta_cutoff_override,
+                },
             )
             
             # Display statistics
@@ -780,6 +998,16 @@ def render_step_3_visualize():
                 st.metric("Avg Words (Edited)", f"{stats['edited']['avg_words']:.1f}")
             with col4:
                 st.metric("Burstiness (Edited)", f"{stats['edited']['burstiness_norm']:.2f}")
+
+            min_sentences = min(
+                stats['original'].get('sentence_count', 0),
+                stats['edited'].get('sentence_count', 0),
+            )
+            if min_sentences < 5:
+                st.warning(
+                    "Reliability warning: fewer than 5 sentences detected. "
+                    "Burstiness estimates can be unstable for very short texts."
+                )
             
             # Pattern analysis
             col_a, col_b = st.columns(2)
@@ -846,9 +1074,13 @@ def render_step_3_visualize():
         elif viz_type == "bars":
             st.markdown("### Metric Comparison (Bar Chart)")
             st.markdown("*Side-by-side comparison of key metrics*")
+
+            render_calibration_panel("viz_bars")
             
             fig = BarChartGenerator.create_metric_comparison(bar_orig_metrics, bar_edited_metrics)
             st.plotly_chart(fig, use_container_width=True)
+
+            render_standard_legend_table("Human vs AI Standards")
             
             st.markdown("### Interpretation")
             increases = []
@@ -879,6 +1111,8 @@ def render_step_3_visualize():
         elif viz_type == "deltas":
             st.markdown("### Metric Shift Visualization")
             st.markdown("*Absolute shift for each metric from original to edited*")
+
+            render_calibration_panel("viz_deltas")
             
             # Create deltas dict in expected format
             deltas_dict = {
@@ -894,6 +1128,8 @@ def render_step_3_visualize():
             
             fig = DeltaVisualization.create_delta_chart(deltas_dict)
             st.plotly_chart(fig, use_container_width=True)
+
+            render_standard_legend_table("Human vs AI Standards")
             
             st.markdown("### Summary of Changes")
             
@@ -919,6 +1155,8 @@ def render_step_3_visualize():
         elif viz_type == "diff":
             st.markdown("### Text Difference Highlight")
             st.markdown("*Original text (green) vs Edited text (red) - showing changes*")
+
+            render_calibration_panel("viz_diff")
             
             # Create diff
             original_words = doc_pair.original_text.split()
@@ -958,6 +1196,8 @@ def render_step_3_visualize():
                 st.markdown(edited_html, unsafe_allow_html=True)
             
             st.markdown("**Legend**: 🟢 Original removed, 🟠 Original replaced, 🔴 AI-edited added, 🟤 AI-edited replaced")
+
+            render_standard_legend_table("Human vs AI Standards")
     
     except Exception as e:
         st.error(f"Error generating visualization: {str(e)}")

@@ -437,7 +437,11 @@ class BurstinessVisualization:
         }
     
     @staticmethod
-    def create_sentence_length_bars(original_text: str, edited_text: str) -> Tuple[go.Figure, Dict]:
+    def create_sentence_length_bars(
+        original_text: str,
+        edited_text: str,
+        threshold_overrides: Dict[str, float] = None,
+    ) -> Tuple[go.Figure, Dict]:
         """
         Create bar chart showing word count per sentence for both texts.
         
@@ -477,6 +481,7 @@ class BurstinessVisualization:
                     'std_dev': 0.0,
                     'burstiness': 0.0,
                     'burstiness_norm': 0.0,
+                    'sentence_count': 0,
                 }
             avg = float(np.mean(counts))
             variance = float(np.var(counts))
@@ -489,6 +494,7 @@ class BurstinessVisualization:
                 'std_dev': std_dev,
                 'burstiness': burstiness,
                 'burstiness_norm': burstiness_norm,
+                'sentence_count': len(counts),
             }
 
         orig_stats = calc_stats(original_counts)
@@ -496,6 +502,11 @@ class BurstinessVisualization:
 
         # Determine pattern using burstiness (coefficient of variation)
         thresholds = BurstinessVisualization._get_burstiness_thresholds()
+        if threshold_overrides:
+            thresholds.update({
+                k: v for k, v in threshold_overrides.items()
+                if v is not None
+            })
 
         def classify_pattern(burstiness_norm: float) -> str:
             if burstiness_norm < thresholds["ai_cutoff"]:
@@ -511,6 +522,7 @@ class BurstinessVisualization:
                 'std_dev': orig_stats['std_dev'],
                 'burstiness': orig_stats['burstiness'],
                 'burstiness_norm': orig_stats['burstiness_norm'],
+                'sentence_count': orig_stats['sentence_count'],
                 'pattern': classify_pattern(orig_stats['burstiness_norm'])
             },
             'edited': {
@@ -519,6 +531,7 @@ class BurstinessVisualization:
                 'std_dev': edit_stats['std_dev'],
                 'burstiness': edit_stats['burstiness'],
                 'burstiness_norm': edit_stats['burstiness_norm'],
+                'sentence_count': edit_stats['sentence_count'],
                 'pattern': classify_pattern(edit_stats['burstiness_norm'])
             },
             'thresholds': thresholds,
