@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from typing import Dict, List, Tuple
 import pandas as pd
+from models import DEFAULT_BENCHMARKS
 
 
 class RadarChartGenerator:
@@ -401,6 +402,39 @@ class MetricsOverTimeChart:
 
 class BurstinessVisualization:
     """Generates detailed burstiness analysis charts."""
+
+    @staticmethod
+    def _get_burstiness_thresholds() -> Dict[str, float]:
+        benchmarks = {b.name: b for b in DEFAULT_BENCHMARKS}
+        ai = benchmarks.get("AI-Edited Text (ChatGPT)")
+        l2 = benchmarks.get("L2 Unassisted Writing")
+        native = benchmarks.get("L2 Native Speaker")
+
+        if ai and l2 and native:
+            ai_norm = min(ai.burstiness / 3.0, 1.0)
+            l2_norm = min(l2.burstiness / 3.0, 1.0)
+            native_norm = min(native.burstiness / 3.0, 1.0)
+
+            ai_cutoff = (ai_norm + l2_norm) / 2.0
+            human_cutoff = (l2_norm + native_norm) / 2.0
+            delta_cutoff = (l2_norm - ai_norm) / 2.0
+            return {
+                "ai_norm": ai_norm,
+                "l2_norm": l2_norm,
+                "native_norm": native_norm,
+                "ai_cutoff": ai_cutoff,
+                "human_cutoff": human_cutoff,
+                "delta_cutoff": delta_cutoff,
+            }
+
+        return {
+            "ai_norm": 0.26,
+            "l2_norm": 0.41,
+            "native_norm": 0.48,
+            "ai_cutoff": 0.34,
+            "human_cutoff": 0.45,
+            "delta_cutoff": 0.08,
+        }
     
     @staticmethod
     def create_sentence_length_bars(original_text: str, edited_text: str) -> Tuple[go.Figure, Dict]:
@@ -434,32 +468,60 @@ class BurstinessVisualization:
         
         # Calculate statistics
         import numpy as np
-        
-        orig_avg = float(np.mean(original_counts)) if original_counts else 0.0
-        orig_var = float(np.var(original_counts)) if original_counts else 0.0
-        edit_avg = float(np.mean(edited_counts)) if edited_counts else 0.0
-        edit_var = float(np.var(edited_counts)) if edited_counts else 0.0
-        
-        # Determine pattern
-        def classify_pattern(variance: float) -> str:
-            if variance < 2.0:
+
+        def calc_stats(counts: List[int]) -> Dict[str, float]:
+            if not counts:
+                return {
+                    'avg': 0.0,
+                    'variance': 0.0,
+                    'std_dev': 0.0,
+                    'burstiness': 0.0,
+                    'burstiness_norm': 0.0,
+                }
+            avg = float(np.mean(counts))
+            variance = float(np.var(counts))
+            std_dev = float(np.std(counts))
+            burstiness = (std_dev / avg) if avg > 0 else 0.0
+            burstiness_norm = min(burstiness / 3.0, 1.0)
+            return {
+                'avg': avg,
+                'variance': variance,
+                'std_dev': std_dev,
+                'burstiness': burstiness,
+                'burstiness_norm': burstiness_norm,
+            }
+
+        orig_stats = calc_stats(original_counts)
+        edit_stats = calc_stats(edited_counts)
+
+        # Determine pattern using burstiness (coefficient of variation)
+        thresholds = BurstinessVisualization._get_burstiness_thresholds()
+
+        def classify_pattern(burstiness_norm: float) -> str:
+            if burstiness_norm < thresholds["ai_cutoff"]:
                 return "Machine-like Pattern"
-            elif variance < 4.0:
+            if burstiness_norm < thresholds["human_cutoff"]:
                 return "Moderate Pattern"
-            else:
-                return "Human-like Pattern"
+            return "Human-like Pattern"
         
         stats = {
             'original': {
-                'avg_words': orig_avg,
-                'variance': orig_var,
-                'pattern': classify_pattern(orig_var)
+                'avg_words': orig_stats['avg'],
+                'variance': orig_stats['variance'],
+                'std_dev': orig_stats['std_dev'],
+                'burstiness': orig_stats['burstiness'],
+                'burstiness_norm': orig_stats['burstiness_norm'],
+                'pattern': classify_pattern(orig_stats['burstiness_norm'])
             },
             'edited': {
-                'avg_words': edit_avg,
-                'variance': edit_var,
-                'pattern': classify_pattern(edit_var)
-            }
+                'avg_words': edit_stats['avg'],
+                'variance': edit_stats['variance'],
+                'std_dev': edit_stats['std_dev'],
+                'burstiness': edit_stats['burstiness'],
+                'burstiness_norm': edit_stats['burstiness_norm'],
+                'pattern': classify_pattern(edit_stats['burstiness_norm'])
+            },
+            'thresholds': thresholds,
         }
         
         # Create visualization - show first 10 sentences for clarity

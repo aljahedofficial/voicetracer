@@ -775,26 +775,34 @@ def render_step_3_visualize():
             with col1:
                 st.metric("Avg Words (Original)", f"{stats['original']['avg_words']:.1f}")
             with col2:
-                st.metric("Variance (Original)", f"{stats['original']['variance']:.1f}")
+                st.metric("Burstiness (Original)", f"{stats['original']['burstiness_norm']:.2f}")
             with col3:
                 st.metric("Avg Words (Edited)", f"{stats['edited']['avg_words']:.1f}")
             with col4:
-                st.metric("Variance (Edited)", f"{stats['edited']['variance']:.1f}")
+                st.metric("Burstiness (Edited)", f"{stats['edited']['burstiness_norm']:.2f}")
             
             # Pattern analysis
             col_a, col_b = st.columns(2)
+            thresholds = stats.get('thresholds', {})
+            ai_cutoff = thresholds.get('ai_cutoff', 0.34)
+            human_cutoff = thresholds.get('human_cutoff', 0.45)
+            delta_cutoff = thresholds.get('delta_cutoff', 0.08)
+
             with col_a:
-                if stats['original']['variance'] >= 4.0:
+                if stats['original']['burstiness_norm'] >= human_cutoff:
                     st.success(f"✓ Original: **{stats['original']['pattern']}**")
-                elif stats['original']['variance'] >= 2.0:
+                elif stats['original']['burstiness_norm'] >= ai_cutoff:
                     st.warning(f"⚠ Original: **{stats['original']['pattern']}**")
                 else:
                     st.error(f"✗ Original: **{stats['original']['pattern']}**")
             
             with col_b:
-                if stats['edited']['variance'] >= 4.0:
+                burst_delta = stats['edited']['burstiness_norm'] - stats['original']['burstiness_norm']
+                if burst_delta <= -delta_cutoff and stats['edited']['burstiness_norm'] < stats['original']['burstiness_norm']:
+                    st.error("✗ Edited: **Mixed/AI-edited Pattern**")
+                elif stats['edited']['burstiness_norm'] >= human_cutoff:
                     st.success(f"✓ Edited: **{stats['edited']['pattern']}**")
-                elif stats['edited']['variance'] >= 2.0:
+                elif stats['edited']['burstiness_norm'] >= ai_cutoff:
                     st.warning(f"⚠ Edited: **{stats['edited']['pattern']}**")
                 else:
                     st.error(f"✗ Edited: **{stats['edited']['pattern']}**")
@@ -811,20 +819,20 @@ def render_step_3_visualize():
             
             # Analysis insight
             st.markdown("### Analysis")
-            variance_change = stats['edited']['variance'] - stats['original']['variance']
-            if variance_change < -1.0:
+            burstiness_change = stats['edited']['burstiness_norm'] - stats['original']['burstiness_norm']
+            if burstiness_change <= -delta_cutoff:
                 st.info(
-                    f"📉 **High variation detected**: AI editing reduced sentence variation by {abs(variance_change):.1f} points. "
+                    f"📉 **Burstiness drop detected**: AI editing reduced burstiness by {abs(burstiness_change):.2f}. "
                     "This indicates more uniform, machine-like sentence structure. Consider restoring some original sentence variety."
                 )
-            elif variance_change < 0:
+            elif burstiness_change < 0:
                 st.info(
-                    f"📊 **Moderate reduction**: Sentence variation decreased by {abs(variance_change):.1f} points. "
+                    f"📊 **Moderate reduction**: Burstiness decreased by {abs(burstiness_change):.2f}. "
                     "Some natural flow may have been smoothed out by AI editing."
                 )
             else:
                 st.success(
-                    f"📈 **Variation maintained or improved**: Your edited text preserves natural variation patterns. "
+                    f"📈 **Variation maintained or improved**: Your edited text preserves natural burstiness patterns. "
                     "The editing maintained authentic human-like sentence flow."
                 )
         
