@@ -188,6 +188,20 @@ def render_standard_legend_table(title: str = "Standard Values Legend") -> None:
     st.table(rows)
 
 
+def render_global_standard_table(title: str = "Global Standard Values") -> None:
+    defaults = _get_default_calibration_values()
+    rows = []
+    for spec in _calibration_specs():
+        metric_key = spec["key"]
+        rows.append({
+            "Metric": spec["label"],
+            "Human writing": spec["fmt"].format(defaults["human"].get(metric_key, 0.0)),
+            "AI-generated writing": spec["fmt"].format(defaults["ai"].get(metric_key, 0.0)),
+        })
+    st.markdown(f"#### {title}")
+    st.table(rows)
+
+
 def _score_against_standards(value: float, human: float, ai: float) -> float:
     if human == ai:
         return 0.5
@@ -345,6 +359,37 @@ def setup_sidebar():
             "VoiceTracer measures stylistic changes when L2 writers use AI editing tools. "
             "Compare your original and edited texts to understand voice preservation."
         )
+
+        with st.expander("Metric Definitions", expanded=False):
+            _ensure_calibration_state()
+            defaults = _get_default_calibration_values()
+            current = st.session_state.calibration_values
+
+            st.markdown(
+                """
+**Burstiness**: std dev of sentence length divided by mean length.  
+**Lexical Diversity**: MTLD scaled to 0-1.  
+**Syntactic Complexity**: 0.4 * ASL + 0.3 * subordination + 0.3 * modifier density.  
+**AI-ism Likelihood**: phrase-pattern score scaled 0-100.  
+**Function Word Ratio**: function words / total words.  
+**Discourse Marker Density**: markers per 1,000 words.  
+**Information Density**: content-word and proper-noun signals (0-1).  
+**Epistemic Hedging**: hedging markers per word (0-1).
+"""
+            )
+
+            st.markdown("**Standards (Human vs AI)**")
+            rows = []
+            for spec in _calibration_specs():
+                key = spec["key"]
+                rows.append({
+                    "Metric": spec["label"],
+                    "Human (default)": spec["fmt"].format(defaults["human"].get(key, 0.0)),
+                    "AI (default)": spec["fmt"].format(defaults["ai"].get(key, 0.0)),
+                    "Human (current)": spec["fmt"].format(current["human"].get(key, 0.0)),
+                    "AI (current)": spec["fmt"].format(current["ai"].get(key, 0.0)),
+                })
+            st.table(rows)
         
         st.markdown("### Navigation")
         current_step = st.radio(
@@ -420,7 +465,12 @@ def render_step_1_input():
     st.markdown("### Manual Calibration")
     st.caption("Adjust standards before analysis. Changes update calibrated results in later steps.")
     render_calibration_panel("step1_calibration", expanded=True)
-    render_standard_legend_table("Human vs AI Standard Values")
+    render_standard_legend_table(
+        "What is currently set by the user for Human vs AI Standard Values"
+    )
+    render_global_standard_table(
+        "What actually is set globally (default values)"
+    )
     st.markdown("---")
     
     col1, col2 = st.columns(2)
