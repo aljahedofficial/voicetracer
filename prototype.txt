@@ -1,0 +1,64 @@
+VoiceTracer Prototype Documentation
+
+What this webapp is
+VoiceTracer is a research prototype that measures how AI editing tools can alter a writer's voice, especially for L2 academic writing. It compares an original draft with an AI-edited version and reports changes across multiple stylistic metrics.
+
+How it works
+1) Input two texts: an original draft and an AI-edited version.
+2) The app extracts sentences and words, then computes lightweight metrics.
+3) It compares the two texts, shows deltas, and provides calibrated scores against human and AI standards.
+4) It visualizes the results and exports reports with the calibration context.
+
+Why it exists
+The goal is to make stylistic homogenization visible and measurable, helping writers preserve their unique voice while improving grammar. It is designed for research and educational use, not for enforcement.
+
+Key features
+- Side-by-side metric comparison for original vs edited text.
+- Calibration panel to adjust Human and AI standards per metric (session-scoped).
+- Calibrated scoring and labels (Human-like, Moderate, AI-like).
+- Export formats: CSV, JSON, DOCX, XLSX, PDF.
+- Visualizations: radar, bar, deltas, burstiness, text diff.
+
+Metrics and formulas
+1) Burstiness
+- Formula: std_dev(sentence_length) / mean(sentence_length)
+- Why it matters: Captures rhythmic variation; low values can indicate uniform, AI-like structure.
+
+2) Lexical Diversity
+- Formula: MTLD scaled to 0-1
+- Why it matters: Measures vocabulary variety; lower values indicate repetitive or formulaic wording.
+
+3) Syntactic Complexity
+- Formula: 0.4 * ASL + 0.3 * Subordination + 0.3 * Modifier Density (normalized)
+- Why it matters: Reflects structural sophistication beyond simple sentence length.
+
+4) AI-ism Likelihood
+- Formula: phrase-pattern frequency score scaled to 0-100
+- Why it matters: Detects formulaic phrasing typical of AI-generated text.
+
+5) Function Word Ratio
+- Formula: function_words / total_words
+- Why it matters: High ratios can indicate over-scaffolded syntax.
+
+6) Discourse Marker Density
+- Formula: markers per 1,000 words
+- Why it matters: Excessive signposting can signal AI-style editing.
+
+7) Information Density
+- Formula: content-word ratio and proper-noun signals scaled to 0-1
+- Why it matters: Low density can indicate verbose, generic language.
+
+8) Epistemic Hedging
+- Formula: hedging_markers / total_words, scaled to 0-1
+- Why it matters: Human writing often hedges; AI text tends to sound overly certain.
+
+Standards and calibration
+- Human and AI standards provide reference points for each metric.
+- Default standards are preloaded from baseline research; users can adjust these per session.
+- Calibrated scores map each metric to a 0-1 scale where 1.0 is closer to human standards and 0.0 is closer to AI standards.
+
+Reliability and limitations
+- This is a research prototype, not a commercial AI detection tool.
+- It does not guarantee 100% accuracy and should not be used as proof of authorship.
+- Short texts can reduce reliability of several metrics.
+- Results are best used as indicators for learning and analysis, not as final judgments.

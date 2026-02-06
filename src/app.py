@@ -390,6 +390,46 @@ def setup_sidebar():
                     "AI (current)": spec["fmt"].format(current["ai"].get(key, 0.0)),
                 })
             st.table(rows)
+
+        with st.expander("Metric Calculations", expanded=False):
+            st.markdown(
+                """
+**Burstiness**  
+Formula: $\sigma(\text{sentence length}) / \mu(\text{sentence length})$  
+Why it matters: Captures natural rhythm and variation; low values often indicate uniform, AI-like structure.
+
+**Lexical Diversity**  
+Formula: MTLD scaled to $0-1$ (higher = more varied vocabulary).  
+Why it matters: Shows how rich and non-repetitive the word choice is.
+
+**Syntactic Complexity**  
+Formula: $0.4 \cdot \text{ASL} + 0.3 \cdot \text{Subordination} + 0.3 \cdot \text{Modifier Density}$, normalized.  
+Why it matters: Measures structural sophistication beyond simple sentence length.
+
+**AI-ism Likelihood**  
+Formula: Pattern-frequency score scaled to $0-100$.  
+Why it matters: Detects formulaic phrases and patterns typical of AI-generated text.
+
+**Function Word Ratio**  
+Formula: $\text{function words} / \text{total words}$.  
+Why it matters: High ratios can indicate over-scaffolded, AI-smoothed writing.
+
+**Discourse Marker Density**  
+Formula: $\text{markers per 1,000 words}$.  
+Why it matters: Excessive signposting can signal AI-style editing.
+
+**Information Density**  
+Formula: Content-word and proper-noun signals scaled to $0-1$.  
+Why it matters: Low values suggest verbose, generic language.
+
+**Epistemic Hedging**  
+Formula: $\text{hedging markers} / \text{total words}$, scaled to $0-1$.  
+Why it matters: Human writing often hedges; AI text tends to sound overly certain.
+"""
+            )
+            st.markdown(
+                "Full documentation: [prototype.txt](prototype.txt)"
+            )
         
         st.markdown("### Navigation")
         current_step = st.radio(
