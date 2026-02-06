@@ -13,6 +13,11 @@ from text_processor import (
 )
 from metrics_spec import (
     AI_ISM_PHRASES,
+    CONFIDENCE_MARKERS,
+    DISCOURSE_MARKERS,
+    FUNCTION_WORDS,
+    HEDGING_MARKERS,
+    QUALIFICATION_MARKERS,
     MetricType,
     normalize_metric,
 )
@@ -186,6 +191,132 @@ class AIismCalculator:
         return round(normalized_score, 1), detected_isms
 
 
+class FunctionWordRatioCalculator:
+    """Calculates function word ratio."""
+
+    @staticmethod
+    def calculate(words: List[str]) -> float:
+        """
+        Calculate function word ratio.
+
+        Returns:
+            Ratio 0-1
+        """
+        if not words:
+            return 0.0
+
+        function_count = sum(1 for w in words if w in FUNCTION_WORDS)
+        return round(function_count / len(words), 4)
+
+
+class DiscourseMarkerDensityCalculator:
+    """Calculates discourse marker density per 1,000 words."""
+
+    @staticmethod
+    def calculate(text: str, word_count: int) -> float:
+        """
+        Calculate discourse marker density.
+
+        Returns:
+            Density per 1,000 words
+        """
+        if not text or word_count == 0:
+            return 0.0
+
+        text_lower = text.lower()
+        marker_count = 0
+
+        for marker in DISCOURSE_MARKERS:
+            pattern = r"\b" + re.escape(marker) + r"\b"
+            marker_count += len(re.findall(pattern, text_lower))
+
+        density = (marker_count / word_count) * 1000
+        return round(density, 3)
+
+
+class InformationDensityCalculator:
+    """Calculates information density using lightweight heuristics."""
+
+    @staticmethod
+    def _proper_noun_count(text: str, sentences: List[str]) -> int:
+        """Estimate proper noun count using capitalization heuristics."""
+        if not text:
+            return 0
+
+        proper_nouns = re.findall(r"\b[A-Z][a-zA-Z]+\b", text)
+
+        # Exclude sentence-initial words to reduce false positives
+        sentence_initials = set()
+        for sentence in sentences:
+            words = sentence.strip().split()
+            if words:
+                sentence_initials.add(words[0])
+
+        return sum(1 for w in proper_nouns if w not in sentence_initials)
+
+    @staticmethod
+    def calculate(text: str, words: List[str], sentences: List[str]) -> float:
+        """
+        Calculate information density (0-1).
+        """
+        if not words:
+            return 0.0
+
+        total_words = len(words)
+        content_words = [w for w in words if w not in FUNCTION_WORDS]
+        content_count = len(content_words)
+
+        content_ratio = content_count / total_words if total_words else 0.0
+        unique_content_ratio = (
+            len(set(content_words)) / content_count if content_count else 0.0
+        )
+
+        proper_noun_count = InformationDensityCalculator._proper_noun_count(text, sentences)
+        proper_noun_density = proper_noun_count / total_words if total_words else 0.0
+        proper_noun_norm = min(proper_noun_density / 0.05, 1.0)
+
+        score = (content_ratio * 0.5) + (unique_content_ratio * 0.3) + (proper_noun_norm * 0.2)
+        return round(min(score, 1.0), 3)
+
+
+class EpistemicHedgingCalculator:
+    """Calculates epistemic hedging index."""
+
+    @staticmethod
+    def calculate(text: str, word_count: int) -> float:
+        """
+        Calculate hedging rate per word.
+
+        Returns:
+            Hedging index 0-1
+        """
+        if not text or word_count == 0:
+            return 0.0
+
+        text_lower = text.lower()
+        hedge_count = 0
+        qualifier_count = 0
+        confidence_count = 0
+
+        for marker in HEDGING_MARKERS:
+            pattern = r"\b" + re.escape(marker) + r"\b"
+            hedge_count += len(re.findall(pattern, text_lower))
+
+        for marker in QUALIFICATION_MARKERS:
+            pattern = r"\b" + re.escape(marker) + r"\b"
+            qualifier_count += len(re.findall(pattern, text_lower))
+
+        for marker in CONFIDENCE_MARKERS:
+            pattern = r"\b" + re.escape(marker) + r"\b"
+            confidence_count += len(re.findall(pattern, text_lower))
+
+        # Penalize overconfidence slightly by subtracting excess confidence
+        adjusted_hedges = max((hedge_count + qualifier_count) - confidence_count, 0)
+        hedging_rate = adjusted_hedges / word_count
+
+        return round(hedging_rate, 4)
+
+
 class MetricCalculationEngine:
     """Main engine for calculating all metrics."""
     
@@ -226,6 +357,40 @@ class MetricCalculationEngine:
         metrics['ai_ism_likelihood'] = normalize_metric(ai_ism_score, MetricType.AI_ISM_LIKELIHOOD)
         metrics['ai_ism_likelihood_raw'] = ai_ism_score
         metrics['ai_isms_detected'] = detected
+
+        # Function Word Ratio
+        fwr = FunctionWordRatioCalculator.calculate(self.features['words'])
+        metrics['function_word_ratio'] = normalize_metric(fwr, MetricType.FUNCTION_WORD_RATIO)
+        metrics['function_word_ratio_raw'] = fwr
+
+        # Discourse Marker Density
+        dmd = DiscourseMarkerDensityCalculator.calculate(
+            self.text,
+            len(self.features['words'])
+        )
+        metrics['discourse_marker_density'] = normalize_metric(
+            dmd, MetricType.DISCOURSE_MARKER_DENSITY
+        )
+        metrics['discourse_marker_density_raw'] = dmd
+
+        # Information Density
+        info_density = InformationDensityCalculator.calculate(
+            self.text,
+            self.features['words'],
+            self.features['sentences']
+        )
+        metrics['information_density'] = normalize_metric(
+            info_density, MetricType.INFORMATION_DENSITY
+        )
+        metrics['information_density_raw'] = info_density
+
+        # Epistemic Hedging
+        hedging = EpistemicHedgingCalculator.calculate(
+            self.text,
+            len(self.features['words'])
+        )
+        metrics['epistemic_hedging'] = normalize_metric(hedging, MetricType.EPISTEMIC_HEDGING)
+        metrics['epistemic_hedging_raw'] = hedging
         
         return metrics
     
@@ -258,9 +423,22 @@ class MetricComparisonEngine:
             'lexical_diversity': 1.0,
             'syntactic_complexity': 1.0,
             'ai_ism_likelihood': 100.0,
+            'function_word_ratio': 1.0,
+            'discourse_marker_density': 30.0,
+            'information_density': 1.0,
+            'epistemic_hedging': 0.15,
         }
         
-        for key in ['burstiness', 'lexical_diversity', 'syntactic_complexity', 'ai_ism_likelihood']:
+        for key in [
+            'burstiness',
+            'lexical_diversity',
+            'syntactic_complexity',
+            'ai_ism_likelihood',
+            'function_word_ratio',
+            'discourse_marker_density',
+            'information_density',
+            'epistemic_hedging',
+        ]:
             raw_key = key + '_raw'
             
             orig_val = original_metrics.get(raw_key, 0.0)

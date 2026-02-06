@@ -44,12 +44,20 @@ class ExportMetadata:
                     'lexical_diversity': analysis_result.original_metrics.lexical_diversity,
                     'syntactic_complexity': analysis_result.original_metrics.syntactic_complexity,
                     'ai_ism_likelihood': analysis_result.original_metrics.ai_ism_likelihood,
+                    'function_word_ratio': analysis_result.original_metrics.function_word_ratio,
+                    'discourse_marker_density': analysis_result.original_metrics.discourse_marker_density,
+                    'information_density': analysis_result.original_metrics.information_density,
+                    'epistemic_hedging': analysis_result.original_metrics.epistemic_hedging,
                 },
                 'edited': {
                     'burstiness': analysis_result.edited_metrics.burstiness,
                     'lexical_diversity': analysis_result.edited_metrics.lexical_diversity,
                     'syntactic_complexity': analysis_result.edited_metrics.syntactic_complexity,
                     'ai_ism_likelihood': analysis_result.edited_metrics.ai_ism_likelihood,
+                    'function_word_ratio': analysis_result.edited_metrics.function_word_ratio,
+                    'discourse_marker_density': analysis_result.edited_metrics.discourse_marker_density,
+                    'information_density': analysis_result.edited_metrics.information_density,
+                    'epistemic_hedging': analysis_result.edited_metrics.epistemic_hedging,
                 },
                 'deltas': {
                     'burstiness_delta': analysis_result.metric_deltas.burstiness_delta,
@@ -60,6 +68,14 @@ class ExportMetadata:
                     'syntactic_complexity_pct_change': analysis_result.metric_deltas.syntactic_complexity_pct_change,
                     'ai_ism_delta': analysis_result.metric_deltas.ai_ism_delta,
                     'ai_ism_pct_change': analysis_result.metric_deltas.ai_ism_pct_change,
+                    'function_word_ratio_delta': analysis_result.metric_deltas.function_word_ratio_delta,
+                    'function_word_ratio_pct_change': analysis_result.metric_deltas.function_word_ratio_pct_change,
+                    'discourse_marker_density_delta': analysis_result.metric_deltas.discourse_marker_density_delta,
+                    'discourse_marker_density_pct_change': analysis_result.metric_deltas.discourse_marker_density_pct_change,
+                    'information_density_delta': analysis_result.metric_deltas.information_density_delta,
+                    'information_density_pct_change': analysis_result.metric_deltas.information_density_pct_change,
+                    'epistemic_hedging_delta': analysis_result.metric_deltas.epistemic_hedging_delta,
+                    'epistemic_hedging_pct_change': analysis_result.metric_deltas.epistemic_hedging_pct_change,
                 },
             },
             'thesis_alignment': {
@@ -131,6 +147,10 @@ class CSVExporter:
             ('Lexical Diversity', 'lexical_diversity'),
             ('Syntactic Complexity', 'syntactic_complexity'),
             ('AI-ism Likelihood', 'ai_ism_likelihood'),
+            ('Function Word Ratio', 'function_word_ratio'),
+            ('Discourse Marker Density', 'discourse_marker_density'),
+            ('Information Density', 'information_density'),
+            ('Epistemic Hedging', 'epistemic_hedging'),
         ]
         metrics_delta_map = {
             'burstiness': (analysis_result.metric_deltas.burstiness_delta,
@@ -141,6 +161,14 @@ class CSVExporter:
                                      analysis_result.metric_deltas.syntactic_complexity_pct_change),
             'ai_ism_likelihood': (analysis_result.metric_deltas.ai_ism_delta,
                                   analysis_result.metric_deltas.ai_ism_pct_change),
+            'function_word_ratio': (analysis_result.metric_deltas.function_word_ratio_delta,
+                                    analysis_result.metric_deltas.function_word_ratio_pct_change),
+            'discourse_marker_density': (analysis_result.metric_deltas.discourse_marker_density_delta,
+                                         analysis_result.metric_deltas.discourse_marker_density_pct_change),
+            'information_density': (analysis_result.metric_deltas.information_density_delta,
+                                    analysis_result.metric_deltas.information_density_pct_change),
+            'epistemic_hedging': (analysis_result.metric_deltas.epistemic_hedging_delta,
+                                  analysis_result.metric_deltas.epistemic_hedging_pct_change),
         }
 
         for label, key in metrics_to_export:
@@ -202,12 +230,20 @@ class JSONExporter:
                     'lexical_diversity': analysis_result.original_metrics.lexical_diversity,
                     'syntactic_complexity': analysis_result.original_metrics.syntactic_complexity,
                     'ai_ism_likelihood': analysis_result.original_metrics.ai_ism_likelihood,
+                    'function_word_ratio': analysis_result.original_metrics.function_word_ratio,
+                    'discourse_marker_density': analysis_result.original_metrics.discourse_marker_density,
+                    'information_density': analysis_result.original_metrics.information_density,
+                    'epistemic_hedging': analysis_result.original_metrics.epistemic_hedging,
                 },
                 'edited': {
                     'burstiness': analysis_result.edited_metrics.burstiness,
                     'lexical_diversity': analysis_result.edited_metrics.lexical_diversity,
                     'syntactic_complexity': analysis_result.edited_metrics.syntactic_complexity,
                     'ai_ism_likelihood': analysis_result.edited_metrics.ai_ism_likelihood,
+                    'function_word_ratio': analysis_result.edited_metrics.function_word_ratio,
+                    'discourse_marker_density': analysis_result.edited_metrics.discourse_marker_density,
+                    'information_density': analysis_result.edited_metrics.information_density,
+                    'epistemic_hedging': analysis_result.edited_metrics.epistemic_hedging,
                 },
                 'deltas': {
                     'burstiness': {
@@ -225,6 +261,22 @@ class JSONExporter:
                     'ai_ism_likelihood': {
                         'delta': analysis_result.metric_deltas.ai_ism_delta,
                         'pct_change': analysis_result.metric_deltas.ai_ism_pct_change,
+                    },
+                    'function_word_ratio': {
+                        'delta': analysis_result.metric_deltas.function_word_ratio_delta,
+                        'pct_change': analysis_result.metric_deltas.function_word_ratio_pct_change,
+                    },
+                    'discourse_marker_density': {
+                        'delta': analysis_result.metric_deltas.discourse_marker_density_delta,
+                        'pct_change': analysis_result.metric_deltas.discourse_marker_density_pct_change,
+                    },
+                    'information_density': {
+                        'delta': analysis_result.metric_deltas.information_density_delta,
+                        'pct_change': analysis_result.metric_deltas.information_density_pct_change,
+                    },
+                    'epistemic_hedging': {
+                        'delta': analysis_result.metric_deltas.epistemic_hedging_delta,
+                        'pct_change': analysis_result.metric_deltas.epistemic_hedging_pct_change,
                     },
                 },
             },
@@ -326,6 +378,18 @@ class PDFExporter:
             ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.metric_deltas.ai_ism_delta:+.1f}"],
+              ['Function Word Ratio', f"{analysis_result.original_metrics.function_word_ratio:.3f}",
+               f"{analysis_result.edited_metrics.function_word_ratio:.3f}",
+               f"{analysis_result.metric_deltas.function_word_ratio_delta:+.3f}"],
+              ['Discourse Marker Density', f"{analysis_result.original_metrics.discourse_marker_density:.2f}",
+               f"{analysis_result.edited_metrics.discourse_marker_density:.2f}",
+               f"{analysis_result.metric_deltas.discourse_marker_density_delta:+.2f}"],
+              ['Information Density', f"{analysis_result.original_metrics.information_density:.3f}",
+               f"{analysis_result.edited_metrics.information_density:.3f}",
+               f"{analysis_result.metric_deltas.information_density_delta:+.3f}"],
+              ['Epistemic Hedging', f"{analysis_result.original_metrics.epistemic_hedging:.3f}",
+               f"{analysis_result.edited_metrics.epistemic_hedging:.3f}",
+               f"{analysis_result.metric_deltas.epistemic_hedging_delta:+.3f}"],
         ]
         metrics_table = Table(metrics_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
         metrics_table.setStyle(TableStyle([
@@ -385,24 +449,45 @@ class ExcelExporter:
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             # Sheet 1: Summary
             summary_data = {
-                'Metric': ['Burstiness', 'Lexical Diversity', 'Syntactic Complexity', 'AI-ism Likelihood'],
+                'Metric': [
+                    'Burstiness',
+                    'Lexical Diversity',
+                    'Syntactic Complexity',
+                    'AI-ism Likelihood',
+                    'Function Word Ratio',
+                    'Discourse Marker Density',
+                    'Information Density',
+                    'Epistemic Hedging',
+                ],
                 'Original': [
                     analysis_result.original_metrics.burstiness,
                     analysis_result.original_metrics.lexical_diversity,
                     analysis_result.original_metrics.syntactic_complexity,
                     analysis_result.original_metrics.ai_ism_likelihood,
+                    analysis_result.original_metrics.function_word_ratio,
+                    analysis_result.original_metrics.discourse_marker_density,
+                    analysis_result.original_metrics.information_density,
+                    analysis_result.original_metrics.epistemic_hedging,
                 ],
                 'Edited': [
                     analysis_result.edited_metrics.burstiness,
                     analysis_result.edited_metrics.lexical_diversity,
                     analysis_result.edited_metrics.syntactic_complexity,
                     analysis_result.edited_metrics.ai_ism_likelihood,
+                    analysis_result.edited_metrics.function_word_ratio,
+                    analysis_result.edited_metrics.discourse_marker_density,
+                    analysis_result.edited_metrics.information_density,
+                    analysis_result.edited_metrics.epistemic_hedging,
                 ],
                 'Absolute Shift (Δ)': [
                     analysis_result.metric_deltas.burstiness_delta,
                     analysis_result.metric_deltas.lexical_diversity_delta,
                     analysis_result.metric_deltas.syntactic_complexity_delta,
                     analysis_result.metric_deltas.ai_ism_delta,
+                    analysis_result.metric_deltas.function_word_ratio_delta,
+                    analysis_result.metric_deltas.discourse_marker_density_delta,
+                    analysis_result.metric_deltas.information_density_delta,
+                    analysis_result.metric_deltas.epistemic_hedging_delta,
                 ],
             }
             df_summary = pd.DataFrame(summary_data)
@@ -489,7 +574,7 @@ class DocxExporter:
         
         # Metrics Comparison
         doc.add_heading('Metric Comparison', 1)
-        metrics_table = doc.add_table(rows=5, cols=4)
+        metrics_table = doc.add_table(rows=9, cols=4)
         metrics_table.style = 'Light Grid Accent 1'
         
         # Header
@@ -513,6 +598,18 @@ class DocxExporter:
             ['AI-ism Likelihood', f"{analysis_result.original_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.edited_metrics.ai_ism_likelihood:.1f}",
              f"{analysis_result.metric_deltas.ai_ism_delta:+.1f}"],
+              ['Function Word Ratio', f"{analysis_result.original_metrics.function_word_ratio:.3f}",
+               f"{analysis_result.edited_metrics.function_word_ratio:.3f}",
+               f"{analysis_result.metric_deltas.function_word_ratio_delta:+.3f}"],
+              ['Discourse Marker Density', f"{analysis_result.original_metrics.discourse_marker_density:.2f}",
+               f"{analysis_result.edited_metrics.discourse_marker_density:.2f}",
+               f"{analysis_result.metric_deltas.discourse_marker_density_delta:+.2f}"],
+              ['Information Density', f"{analysis_result.original_metrics.information_density:.3f}",
+               f"{analysis_result.edited_metrics.information_density:.3f}",
+               f"{analysis_result.metric_deltas.information_density_delta:+.3f}"],
+              ['Epistemic Hedging', f"{analysis_result.original_metrics.epistemic_hedging:.3f}",
+               f"{analysis_result.edited_metrics.epistemic_hedging:.3f}",
+               f"{analysis_result.metric_deltas.epistemic_hedging_delta:+.3f}"],
         ]
         
         for i, row_data in enumerate(metrics_rows, start=1):

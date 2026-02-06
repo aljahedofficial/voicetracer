@@ -12,6 +12,10 @@ from metric_calculator import (
     LexicalDiversityCalculator,
     SyntacticComplexityCalculator,
     AIismCalculator,
+    FunctionWordRatioCalculator,
+    DiscourseMarkerDensityCalculator,
+    InformationDensityCalculator,
+    EpistemicHedgingCalculator,
 )
 
 
@@ -172,6 +176,32 @@ class TestMetricCalculators:
         human_score, _ = AIismCalculator.calculate(human_text)
         assert human_score <= ai_score  # Should be lower or equal to AI text
 
+    def test_function_word_ratio(self):
+        """Test function word ratio calculation."""
+        words = ["the", "cat", "sat", "on", "the", "mat"]
+        ratio = FunctionWordRatioCalculator.calculate(words)
+        assert 0.3 <= ratio <= 0.9
+
+    def test_discourse_marker_density(self):
+        """Test discourse marker density calculation."""
+        text = "Moreover, this is clear. In conclusion, results are strong."
+        density = DiscourseMarkerDensityCalculator.calculate(text, 12)
+        assert density > 0
+
+    def test_information_density(self):
+        """Test information density calculation."""
+        text = "Alice visited Paris to study AI. The results were strong."
+        words = TextProcessor.get_word_tokens(text)
+        sentences = TextProcessor.extract_sentences(text)
+        density = InformationDensityCalculator.calculate(text, words, sentences)
+        assert 0 <= density <= 1
+
+    def test_epistemic_hedging(self):
+        """Test hedging calculation."""
+        text = "It seems that the results might be significant."
+        hedging = EpistemicHedgingCalculator.calculate(text, 9)
+        assert hedging > 0
+
 
 # ============================================================================
 # METRIC VALIDATION TESTS (Parity with Manual Analysis)
@@ -211,12 +241,20 @@ class TestMetricValidation:
         assert 0 <= metrics['lexical_diversity'] <= 1
         assert 0 <= metrics['syntactic_complexity'] <= 1
         assert 0 <= metrics['ai_ism_likelihood'] <= 1
+        assert 0 <= metrics['function_word_ratio'] <= 1
+        assert 0 <= metrics['discourse_marker_density'] <= 1
+        assert 0 <= metrics['information_density'] <= 1
+        assert 0 <= metrics['epistemic_hedging'] <= 1
         
         # Raw values in expected ranges
         assert 0 < metrics['burstiness_raw'] < 3
         assert 0 <= metrics['lexical_diversity_raw'] <= 1
         assert 0 <= metrics['syntactic_complexity_raw'] <= 1
         assert 0 <= metrics['ai_ism_likelihood_raw'] <= 100
+        assert 0 <= metrics['function_word_ratio_raw'] <= 1
+        assert 0 <= metrics['discourse_marker_density_raw'] <= 50
+        assert 0 <= metrics['information_density_raw'] <= 1
+        assert 0 <= metrics['epistemic_hedging_raw'] <= 0.2
 
 
 # ============================================================================
@@ -243,12 +281,20 @@ class TestExportValidation:
                 lexical_diversity=0.65,
                 syntactic_complexity=0.70,
                 ai_ism_likelihood=25.0,
+                function_word_ratio=0.52,
+                discourse_marker_density=10.0,
+                information_density=0.60,
+                epistemic_hedging=0.08,
             ),
             edited_metrics=MetricScores(
                 burstiness=0.8,
                 lexical_diversity=0.55,
                 syntactic_complexity=0.65,
                 ai_ism_likelihood=65.0,
+                function_word_ratio=0.60,
+                discourse_marker_density=18.0,
+                information_density=0.45,
+                epistemic_hedging=0.04,
             ),
             metric_deltas=MetricDeltas(
                 burstiness_delta=-0.4,
@@ -259,6 +305,14 @@ class TestExportValidation:
                 syntactic_complexity_pct_change=-7.1,
                 ai_ism_delta=40.0,
                 ai_ism_pct_change=160.0,
+                function_word_ratio_delta=0.08,
+                function_word_ratio_pct_change=15.4,
+                discourse_marker_density_delta=8.0,
+                discourse_marker_density_pct_change=80.0,
+                information_density_delta=-0.15,
+                information_density_pct_change=-25.0,
+                epistemic_hedging_delta=-0.04,
+                epistemic_hedging_pct_change=-50.0,
             ),
         )
         
@@ -289,16 +343,24 @@ class TestExportValidation:
             original_metrics=MetricScores(
                 burstiness=1.2, lexical_diversity=0.65,
                 syntactic_complexity=0.70, ai_ism_likelihood=25.0,
+                function_word_ratio=0.52, discourse_marker_density=10.0,
+                information_density=0.60, epistemic_hedging=0.08,
             ),
             edited_metrics=MetricScores(
                 burstiness=0.8, lexical_diversity=0.55,
                 syntactic_complexity=0.65, ai_ism_likelihood=65.0,
+                function_word_ratio=0.60, discourse_marker_density=18.0,
+                information_density=0.45, epistemic_hedging=0.04,
             ),
             metric_deltas=MetricDeltas(
                 burstiness_delta=-0.4, burstiness_pct_change=-33.3,
                 lexical_diversity_delta=-0.1, lexical_diversity_pct_change=-15.4,
                 syntactic_complexity_delta=-0.05, syntactic_complexity_pct_change=-7.1,
                 ai_ism_delta=40.0, ai_ism_pct_change=160.0,
+                function_word_ratio_delta=0.08, function_word_ratio_pct_change=15.4,
+                discourse_marker_density_delta=8.0, discourse_marker_density_pct_change=80.0,
+                information_density_delta=-0.15, information_density_pct_change=-25.0,
+                epistemic_hedging_delta=-0.04, epistemic_hedging_pct_change=-50.0,
             ),
         )
         

@@ -20,7 +20,7 @@ When L2 writers use AI tools like ChatGPT to improve grammar, they often trade t
 - VoiceTracer accepts TXT, DOCX, and PDF files
 
 ### Step 2: View Your Metrics
-VoiceTracer analyzes both texts and compares them across 4 key metrics:
+VoiceTracer analyzes both texts and compares them across 8 core metrics:
 
 1. **Burstiness** — How much your sentence lengths vary
    - ↑ High = Natural, human-like variation
@@ -38,8 +38,24 @@ VoiceTracer analyzes both texts and compares them across 4 key metrics:
    - ↑ High = Formulaic AI patterns detected
    - ↓ Low = Natural, human-like language
 
+5. **Function Word Ratio** — How much grammatical scaffolding appears
+   - ↑ High = Over-scaffolded, AI-like structure
+   - ↓ Low = Content-heavy, human-like wording
+
+6. **Discourse Marker Density** — How often explicit connectors appear
+   - ↑ High = Over-signposted structure
+   - ↓ Low = Implicit, natural flow
+
+7. **Information Density** — How specific content is per word
+   - ↑ High = Concrete, efficient wording
+   - ↓ Low = Verbose, generic phrasing
+
+8. **Epistemic Hedging** — How often uncertainty is expressed
+   - ↑ High = Nuanced, human-like hedging
+   - ↓ Low = Overconfident, AI-like tone
+
 ### Step 3: Visualize the Differences
-- **Radar chart**: See all 4 metrics at a glance
+- **Radar chart**: See all 8 metrics at a glance
 - **Bar charts**: Compare original vs. edited side-by-side
 - **Text diff**: Highlight what changed
 - **Recommendations**: Get actionable suggestions
@@ -102,11 +118,11 @@ Edit the AI's suggestions. Replace formulaic phrases with your own words, especi
 
 VoiceTracer compares your metrics against these baselines:
 
-| Benchmark | Burstiness | Lexical Div. | Syntactic | AI-ism |
-|-----------|-----------|-------------|----------|---------|
-| **Native Speaker** | 1.45 | 0.68 | Moderate | 5% |
-| **L2 Unassisted** | 1.23 | 0.55 | Moderate | 3% |
-| **AI-Edited (ChatGPT)** | 0.78 | 0.42 | Moderate | 79% |
+| Benchmark | Burstiness | Lexical Div. | Syntactic | AI-ism | FWR | DMD | Info Density | Hedging |
+|-----------|-----------|-------------|----------|---------|-----|-----|--------------|---------|
+| **Native Speaker** | 1.45 | 0.68 | Moderate | 5% | 0.52 | 9 | 0.62 | 0.11 |
+| **L2 Unassisted** | 1.23 | 0.55 | Moderate | 3% | 0.50 | 8 | 0.58 | 0.09 |
+| **AI-Edited (ChatGPT)** | 0.78 | 0.42 | Moderate | 79% | 0.60 | 18 | 0.42 | 0.04 |
 
 **How to read this:**
 - Your unassisted writing is probably closer to the "L2 Unassisted" row

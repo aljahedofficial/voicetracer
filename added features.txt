@@ -1,0 +1,40 @@
+VoiceTracer - Added Features Plan (Core 8 Metrics)
+
+Goal
+- Expand from 4 metrics to the Core 8 for 70-90% AI detection without LLMs.
+- Keep runtime lightweight for Streamlit.
+
+Phases
+
+Phase 1 - Metric Foundations (logic and lexicons)
+- Add lexicons: function words, discourse markers, hedging terms, confidence markers.
+- Add metric definitions + normalization rules in metrics_spec.
+- Implement calculations in metric_calculator using existing tokenization.
+Deliverable: 4 new metric calculators returning normalized scores and raw values.
+
+Phase 2 - Data Models and Engine Integration
+- Extend MetricScores and MetricDeltas with 4 new fields.
+- Update MetricCalculationEngine and MetricComparisonEngine.
+- Update metadata, export schema, and benchmark placeholders.
+Deliverable: end-to-end metrics available in analysis results.
+
+Phase 3 - UI and Visuals
+- Add 4 metric cards in Step 2.
+- Update radar chart axes from 4 to 8.
+- Update delta visualizations and narrative summaries.
+Deliverable: Streamlit UI shows 8 metrics consistently.
+
+Phase 4 - Exports and Documentation
+- CSV/JSON/PDF tables updated with 8 metrics.
+- Update README and docs to reflect Core 8.
+Deliverable: all export formats include 8 metrics.
+
+Phase 5 - Validation and Tuning
+- Add tests for new metrics and edge cases (short texts, empty inputs).
+- Adjust thresholds/normalization if needed based on manual samples.
+Deliverable: test coverage + tuned ranges for stable output.
+
+Implementation Notes
+- No LLMs, no external corpora required.
+- Use lexical lists + simple heuristics to keep dependencies minimal.
+- Metrics added: Function Word Ratio, Discourse Marker Density, Information Density, Epistemic Hedging Index.

@@ -42,8 +42,7 @@ VoiceTracer/
 | Component | Technology | Version | Purpose |
 |-----------|-----------|---------|---------|
 | **Framework** | Streamlit | ≥1.28.0 | Web UI & state management |
-| **NLP** | spaCy | ≥3.7.0 | Text parsing & linguistic analysis |
-| **Tokenization** | NLTK | ≥3.8.1 | Sentence & word tokenization |
+| **NLP** | Rule-based | n/a | Lightweight text parsing & heuristics |
 | **Data** | pandas | ≥2.0.0 | Data manipulation & analysis |
 | **Visualization** | Plotly | ≥5.18.0 | Interactive charts |
 | **Export - PDF** | reportlab | ≥4.0.0 | PDF generation |
@@ -74,9 +73,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -e ".[dev]"  # Installs project + dev dependencies
-
-# Download spaCy model (required for NLP)
-python -m spacy download en_core_web_sm
 
 # Run tests
 pytest tests/ -v
@@ -122,6 +118,10 @@ Defines each metric with:
 - **Lexical Diversity**: MTLD-normalized to 0-1
 - **Syntactic Complexity**: Composite (ASL, subordination, modifiers)
 - **AI-ism Likelihood**: Phrase + pattern detection (0-100)
+- **Function Word Ratio**: Function words / total words
+- **Discourse Marker Density**: Markers per 1,000 words
+- **Information Density**: Content ratio + unique content + proper noun signals
+- **Epistemic Hedging**: Hedging markers per word
 
 #### 3. **text_processor.py** — Text Analysis
 Provides utilities for:
@@ -138,6 +138,10 @@ Individual calculators:
 - `LexicalDiversityCalculator` — Vocabulary richness
 - `SyntacticComplexityCalculator` — Structure sophistication
 - `AIismCalculator` — Formulaic pattern detection
+- `FunctionWordRatioCalculator` — Grammatical scaffolding ratio
+- `DiscourseMarkerDensityCalculator` — Connector density
+- `InformationDensityCalculator` — Content specificity
+- `EpistemicHedgingCalculator` — Uncertainty markers
 
 Main engine:
 - `MetricCalculationEngine` — Calculates all metrics from text
@@ -145,7 +149,7 @@ Main engine:
 
 #### 5. **visualizations.py** — Charts & Visuals
 Plotly-based chart generators:
-- `RadarChartGenerator` — 6-axis comparison
+- `RadarChartGenerator` — 8-axis comparison
 - `BarChartGenerator` — Side-by-side metrics
 - `DeltaVisualization` — Percent change charts
 - `TextDiffVisualizer` — Side-by-side text diff

@@ -278,6 +278,10 @@ def render_step_1_input():
                     lexical_diversity=orig_metrics['lexical_diversity_raw'],
                     syntactic_complexity=orig_metrics['syntactic_complexity_raw'],
                     ai_ism_likelihood=orig_metrics['ai_ism_likelihood_raw'],
+                    function_word_ratio=orig_metrics['function_word_ratio_raw'],
+                    discourse_marker_density=orig_metrics['discourse_marker_density_raw'],
+                    information_density=orig_metrics['information_density_raw'],
+                    epistemic_hedging=orig_metrics['epistemic_hedging_raw'],
                 )
                 
                 metric_scores_edit = MetricScores(
@@ -285,6 +289,10 @@ def render_step_1_input():
                     lexical_diversity=edit_metrics['lexical_diversity_raw'],
                     syntactic_complexity=edit_metrics['syntactic_complexity_raw'],
                     ai_ism_likelihood=edit_metrics['ai_ism_likelihood_raw'],
+                    function_word_ratio=edit_metrics['function_word_ratio_raw'],
+                    discourse_marker_density=edit_metrics['discourse_marker_density_raw'],
+                    information_density=edit_metrics['information_density_raw'],
+                    epistemic_hedging=edit_metrics['epistemic_hedging_raw'],
                 )
                 
                 deltas = MetricComparisonEngine.calculate_deltas(orig_metrics, edit_metrics)
@@ -298,6 +306,14 @@ def render_step_1_input():
                     syntactic_complexity_pct_change=deltas['syntactic_complexity_pct_change'],
                     ai_ism_delta=deltas['ai_ism_likelihood_delta'],
                     ai_ism_pct_change=deltas['ai_ism_likelihood_pct_change'],
+                    function_word_ratio_delta=deltas['function_word_ratio_delta'],
+                    function_word_ratio_pct_change=deltas['function_word_ratio_pct_change'],
+                    discourse_marker_density_delta=deltas['discourse_marker_density_delta'],
+                    discourse_marker_density_pct_change=deltas['discourse_marker_density_pct_change'],
+                    information_density_delta=deltas['information_density_delta'],
+                    information_density_pct_change=deltas['information_density_pct_change'],
+                    epistemic_hedging_delta=deltas['epistemic_hedging_delta'],
+                    epistemic_hedging_pct_change=deltas['epistemic_hedging_pct_change'],
                 )
                 
                 result = AnalysisResult(
@@ -311,6 +327,8 @@ def render_step_1_input():
                 st.session_state.analysis_result = result
                 st.session_state.orig_engine = orig_engine
                 st.session_state.edit_engine = edit_engine
+                st.session_state.orig_metrics = orig_metrics
+                st.session_state.edit_metrics = edit_metrics
             
             st.success("✓ Analysis complete! Go to Step 2 to view metrics.")
 
@@ -329,38 +347,104 @@ def render_step_2_metrics():
     result = st.session_state.analysis_result
     
     st.markdown("### Quick Summary")
-    st.markdown("Compare your metrics across 4 key dimensions:")
-    
-    # Metric cards in grid
-    met_col1, met_col2, met_col3, met_col4 = st.columns(4)
+    st.markdown("Compare your metrics across 8 core dimensions:")
     
     metrics_info = [
-        ("Burstiness", result.original_metrics.burstiness, result.edited_metrics.burstiness, result.metric_deltas.burstiness_delta),
-        ("Lexical Diversity", result.original_metrics.lexical_diversity, result.edited_metrics.lexical_diversity, result.metric_deltas.lexical_diversity_delta),
-        ("Syntactic Complexity", result.original_metrics.syntactic_complexity, result.edited_metrics.syntactic_complexity, result.metric_deltas.syntactic_complexity_delta),
-        ("AI-ism Likelihood", result.original_metrics.ai_ism_likelihood, result.edited_metrics.ai_ism_likelihood, result.metric_deltas.ai_ism_delta),
+        {
+            "name": "Burstiness",
+            "orig": result.original_metrics.burstiness,
+            "edit": result.edited_metrics.burstiness,
+            "delta": result.metric_deltas.burstiness_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
+        {
+            "name": "Lexical Diversity",
+            "orig": result.original_metrics.lexical_diversity,
+            "edit": result.edited_metrics.lexical_diversity,
+            "delta": result.metric_deltas.lexical_diversity_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
+        {
+            "name": "Syntactic Complexity",
+            "orig": result.original_metrics.syntactic_complexity,
+            "edit": result.edited_metrics.syntactic_complexity,
+            "delta": result.metric_deltas.syntactic_complexity_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
+        {
+            "name": "AI-ism Likelihood",
+            "orig": result.original_metrics.ai_ism_likelihood,
+            "edit": result.edited_metrics.ai_ism_likelihood,
+            "delta": result.metric_deltas.ai_ism_delta,
+            "fmt": "{:.1f}",
+            "delta_fmt": "{:+.1f}",
+        },
+        {
+            "name": "Function Word Ratio",
+            "orig": result.original_metrics.function_word_ratio,
+            "edit": result.edited_metrics.function_word_ratio,
+            "delta": result.metric_deltas.function_word_ratio_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
+        {
+            "name": "Discourse Marker Density",
+            "orig": result.original_metrics.discourse_marker_density,
+            "edit": result.edited_metrics.discourse_marker_density,
+            "delta": result.metric_deltas.discourse_marker_density_delta,
+            "fmt": "{:.2f}",
+            "delta_fmt": "{:+.2f}",
+        },
+        {
+            "name": "Information Density",
+            "orig": result.original_metrics.information_density,
+            "edit": result.edited_metrics.information_density,
+            "delta": result.metric_deltas.information_density_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
+        {
+            "name": "Epistemic Hedging",
+            "orig": result.original_metrics.epistemic_hedging,
+            "edit": result.edited_metrics.epistemic_hedging,
+            "delta": result.metric_deltas.epistemic_hedging_delta,
+            "fmt": "{:.3f}",
+            "delta_fmt": "{:+.3f}",
+        },
     ]
     
-    cols = [met_col1, met_col2, met_col3, met_col4]
-    
-    for col, (name, orig, edit, delta) in zip(cols, metrics_info):
-        with col:
-            st.markdown(f"**{name}**")
-            st.metric(
-                label="Original",
-                value=f"{orig:.2f}",
-            )
-            st.metric(
-                label="Edited",
-                value=f"{edit:.2f}",
-                delta=f"{delta:+.3f}" if name != "AI-ism Likelihood" else f"{delta:+.1f}"
-            )
+    for row in range(2):
+        cols = st.columns(4)
+        for col, metric in zip(cols, metrics_info[row * 4:(row + 1) * 4]):
+            with col:
+                st.markdown(f"**{metric['name']}**")
+                st.metric(
+                    label="Original",
+                    value=metric["fmt"].format(metric["orig"]),
+                )
+                st.metric(
+                    label="Edited",
+                    value=metric["fmt"].format(metric["edit"]),
+                    delta=metric["delta_fmt"].format(metric["delta"]),
+                )
     
     # Detailed explanations with tabs
     st.markdown("### Detailed Analysis")
     
-    tab_burst, tab_lex, tab_syn, tab_ai = st.tabs(
-        ["Burstiness", "Lexical Diversity", "Syntactic Complexity", "AI-ism"]
+    tab_burst, tab_lex, tab_syn, tab_ai, tab_fwr, tab_dmd, tab_id, tab_hedge = st.tabs(
+        [
+            "Burstiness",
+            "Lexical Diversity",
+            "Syntactic Complexity",
+            "AI-ism",
+            "Function Words",
+            "Discourse Markers",
+            "Information Density",
+            "Hedging",
+        ]
     )
     
     with tab_burst:
@@ -476,6 +560,124 @@ def render_step_2_metrics():
             "Revert some suggestions, especially openings and closings where your voice matters most."
         )
 
+    with tab_fwr:
+        st.markdown("#### What It Is")
+        st.info(
+            "**Function Word Ratio** measures how much grammatical scaffolding "
+            "(articles, prepositions, pronouns) appears in your text."
+        )
+
+        st.markdown("#### Your Scores")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Original", f"{result.original_metrics.function_word_ratio:.3f}")
+        with col2:
+            st.metric(
+                "Edited",
+                f"{result.edited_metrics.function_word_ratio:.3f}",
+                delta=f"{result.metric_deltas.function_word_ratio_delta:+.3f}",
+            )
+
+        st.markdown("#### Why It Changed")
+        st.success(
+            "AI editors tend to add function words to smooth flow and grammar. "
+            "A rising ratio suggests more scaffolding and less dense wording."
+        )
+
+        st.markdown("#### Recommendation")
+        st.warning(
+            "If the ratio rose, the edited text may be over-scaffolded. "
+            "Consider tightening phrases or restoring content-heavy wording."
+        )
+
+    with tab_dmd:
+        st.markdown("#### What It Is")
+        st.info(
+            "**Discourse Marker Density** counts explicit connectors like "
+            "'moreover' and 'therefore' per 1,000 words."
+        )
+
+        st.markdown("#### Your Scores")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Original", f"{result.original_metrics.discourse_marker_density:.2f}")
+        with col2:
+            st.metric(
+                "Edited",
+                f"{result.edited_metrics.discourse_marker_density:.2f}",
+                delta=f"{result.metric_deltas.discourse_marker_density_delta:+.2f}",
+            )
+
+        st.markdown("#### Why It Changed")
+        st.success(
+            "AI editing often inserts explicit connectors to guide readers. "
+            "Higher density signals more signposting and a more formulaic flow."
+        )
+
+        st.markdown("#### Recommendation")
+        st.warning(
+            "If density increased, consider removing repetitive connectors "
+            "and letting ideas flow without constant signposting."
+        )
+
+    with tab_id:
+        st.markdown("#### What It Is")
+        st.info(
+            "**Information Density** estimates specificity per word using content words "
+            "and proper-noun signals."
+        )
+
+        st.markdown("#### Your Scores")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Original", f"{result.original_metrics.information_density:.3f}")
+        with col2:
+            st.metric(
+                "Edited",
+                f"{result.edited_metrics.information_density:.3f}",
+                delta=f"{result.metric_deltas.information_density_delta:+.3f}",
+            )
+
+        st.markdown("#### Why It Changed")
+        st.success(
+            "AI often expands sentences with generic phrasing. "
+            "Lower density means more filler relative to concrete details."
+        )
+
+        st.markdown("#### Recommendation")
+        st.warning(
+            "If density dropped, consider reintroducing concrete details and specific terms."
+        )
+
+    with tab_hedge:
+        st.markdown("#### What It Is")
+        st.info(
+            "**Epistemic Hedging** tracks uncertainty markers (e.g., 'might', 'perhaps'). "
+            "Humans hedge more than AI-generated text."
+        )
+
+        st.markdown("#### Your Scores")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Original", f"{result.original_metrics.epistemic_hedging:.3f}")
+        with col2:
+            st.metric(
+                "Edited",
+                f"{result.edited_metrics.epistemic_hedging:.3f}",
+                delta=f"{result.metric_deltas.epistemic_hedging_delta:+.3f}",
+            )
+
+        st.markdown("#### Why It Changed")
+        st.success(
+            "AI-generated edits often sound more certain. "
+            "A drop in hedging indicates a more confident, less nuanced tone."
+        )
+
+        st.markdown("#### Recommendation")
+        st.warning(
+            "If hedging decreased, consider restoring nuanced language where appropriate."
+        )
+
 
 # ============================================================================
 # STEP 3: VISUALIZATIONS
@@ -497,7 +699,7 @@ def render_step_3_visualize():
         "Select visualization:",
         options=["radar", "burstiness", "bars", "deltas", "diff"],
         format_func=lambda x: {
-            "radar": "🎯 6-Axis Radar (Original vs Edited)",
+            "radar": "🎯 8-Axis Radar (Original vs Edited)",
             "burstiness": "📊 Syntactic Burstiness",
             "bars": "📊 Bar Chart Comparison",
             "deltas": "📈 Metric Changes",
@@ -510,41 +712,17 @@ def render_step_3_visualize():
     
     # Get engine data for visualizations
     # For radar chart (expects non-raw keys)
-    radar_orig_metrics = {
-        'burstiness': result.original_metrics.burstiness,
-        'lexical_diversity': result.original_metrics.lexical_diversity,
-        'syntactic_complexity': result.original_metrics.syntactic_complexity,
-        'ai_ism_likelihood': result.original_metrics.ai_ism_likelihood,
-        'passive_voice_ratio': 0.3,  # Placeholder
-    }
-    
-    radar_edited_metrics = {
-        'burstiness': result.edited_metrics.burstiness,
-        'lexical_diversity': result.edited_metrics.lexical_diversity,
-        'syntactic_complexity': result.edited_metrics.syntactic_complexity,
-        'ai_ism_likelihood': result.edited_metrics.ai_ism_likelihood,
-        'passive_voice_ratio': 0.25,  # Placeholder
-    }
+    radar_orig_metrics = st.session_state.get('orig_metrics', {})
+    radar_edited_metrics = st.session_state.get('edit_metrics', {})
     
     # For bar chart (expects _raw keys)
-    bar_orig_metrics = {
-        'burstiness_raw': result.original_metrics.burstiness,
-        'lexical_diversity_raw': result.original_metrics.lexical_diversity,
-        'syntactic_complexity_raw': result.original_metrics.syntactic_complexity,
-        'ai_ism_likelihood_raw': result.original_metrics.ai_ism_likelihood,
-    }
-    
-    bar_edited_metrics = {
-        'burstiness_raw': result.edited_metrics.burstiness,
-        'lexical_diversity_raw': result.edited_metrics.lexical_diversity,
-        'syntactic_complexity_raw': result.edited_metrics.syntactic_complexity,
-        'ai_ism_likelihood_raw': result.edited_metrics.ai_ism_likelihood,
-    }
+    bar_orig_metrics = st.session_state.get('orig_metrics', {})
+    bar_edited_metrics = st.session_state.get('edit_metrics', {})
     
     try:
         if viz_type == "radar":
-            st.markdown("### 6-Axis Radar Chart")
-            st.markdown("*Compare your original and edited texts across 6 linguistic dimensions*")
+            st.markdown("### 8-Axis Radar Chart")
+            st.markdown("*Compare your original and edited texts across 8 linguistic dimensions*")
             
             fig = RadarChartGenerator.create_metric_radar(radar_orig_metrics, radar_edited_metrics)
             st.plotly_chart(fig, use_container_width=True)
@@ -636,20 +814,27 @@ def render_step_3_visualize():
             increases = []
             decreases = []
             
-            if result.metric_deltas.burstiness_delta > 0:
-                decreases.append("Burstiness (more uniform)")
-            else:
-                increases.append("Burstiness (more varied)")
+            change_map = [
+                ("Burstiness", result.metric_deltas.burstiness_delta, "more varied", "more uniform"),
+                ("Lexical Diversity", result.metric_deltas.lexical_diversity_delta, "more varied vocabulary", "more formulaic"),
+                ("Syntactic Complexity", result.metric_deltas.syntactic_complexity_delta, "more complex", "more simplified"),
+                ("AI-ism Likelihood", result.metric_deltas.ai_ism_delta, "more AI-like", "less AI-like"),
+                ("Function Word Ratio", result.metric_deltas.function_word_ratio_delta, "more scaffolded", "more content-heavy"),
+                ("Discourse Marker Density", result.metric_deltas.discourse_marker_density_delta, "more signposted", "more implicit"),
+                ("Information Density", result.metric_deltas.information_density_delta, "more specific", "more verbose"),
+                ("Epistemic Hedging", result.metric_deltas.epistemic_hedging_delta, "more hedged", "more confident"),
+            ]
             
-            if result.metric_deltas.lexical_diversity_delta > 0:
-                increases.append("Lexical Diversity (more varied vocabulary)")
-            else:
-                decreases.append("Lexical Diversity (more formulaic)")
+            for name, delta, up_label, down_label in change_map:
+                if delta > 0:
+                    increases.append(f"{name} ({up_label})")
+                elif delta < 0:
+                    decreases.append(f"{name} ({down_label})")
             
             if decreases:
                 st.warning(f"**Metrics that decreased**: {', '.join(decreases)}")
             if increases:
-                st.success(f"**Metrics that improved**: {', '.join(increases)}")
+                st.success(f"**Metrics that increased**: {', '.join(increases)}")
         
         elif viz_type == "deltas":
             st.markdown("### Metric Shift Visualization")
@@ -657,10 +842,14 @@ def render_step_3_visualize():
             
             # Create deltas dict in expected format
             deltas_dict = {
-                'burstiness_pct_change': result.metric_deltas.burstiness_delta,
-                'lexical_diversity_pct_change': result.metric_deltas.lexical_diversity_delta,
-                'syntactic_complexity_pct_change': result.metric_deltas.syntactic_complexity_delta,
-                'ai_ism_likelihood_pct_change': result.metric_deltas.ai_ism_delta,
+                'burstiness_pct_change': result.metric_deltas.burstiness_pct_change,
+                'lexical_diversity_pct_change': result.metric_deltas.lexical_diversity_pct_change,
+                'syntactic_complexity_pct_change': result.metric_deltas.syntactic_complexity_pct_change,
+                'ai_ism_likelihood_pct_change': result.metric_deltas.ai_ism_pct_change,
+                'function_word_ratio_pct_change': result.metric_deltas.function_word_ratio_pct_change,
+                'discourse_marker_density_pct_change': result.metric_deltas.discourse_marker_density_pct_change,
+                'information_density_pct_change': result.metric_deltas.information_density_pct_change,
+                'epistemic_hedging_pct_change': result.metric_deltas.epistemic_hedging_pct_change,
             }
             
             fig = DeltaVisualization.create_delta_chart(deltas_dict)
@@ -673,13 +862,17 @@ def render_step_3_visualize():
                 ("Lexical Diversity", result.metric_deltas.lexical_diversity_delta, "vocabulary richness"),
                 ("Syntactic Complexity", result.metric_deltas.syntactic_complexity_delta, "structure sophistication"),
                 ("AI-ism Likelihood", result.metric_deltas.ai_ism_delta, "AI-pattern frequency"),
+                ("Function Word Ratio", result.metric_deltas.function_word_ratio_delta, "grammatical scaffolding"),
+                ("Discourse Marker Density", result.metric_deltas.discourse_marker_density_delta, "explicit signposting"),
+                ("Information Density", result.metric_deltas.information_density_delta, "content specificity"),
+                ("Epistemic Hedging", result.metric_deltas.epistemic_hedging_delta, "uncertainty markers"),
             ]
             
-            for name, pct_change, description in metrics_summary:
-                if pct_change < 0:
-                    st.error(f"⬇️ **{name}** decreased {abs(pct_change):.3f} ({description})")
-                elif pct_change > 0:
-                    st.warning(f"⬆️ **{name}** increased {pct_change:.3f} ({description})")
+            for name, delta, description in metrics_summary:
+                if delta < 0:
+                    st.error(f"⬇️ **{name}** decreased {abs(delta):.3f} ({description})")
+                elif delta > 0:
+                    st.warning(f"⬆️ **{name}** increased {delta:.3f} ({description})")
                 else:
                     st.info(f"→ **{name}** remained stable ({description})")
         

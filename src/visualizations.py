@@ -19,15 +19,17 @@ class RadarChartGenerator:
         edited_metrics: Dict[str, float]
     ) -> go.Figure:
         """
-        Create a 6-axis radar chart comparing original and edited texts.
+        Create an 8-axis radar chart comparing original and edited texts.
         
         Axes:
         1. Burstiness (sentence variation)
         2. Lexical Diversity (vocabulary richness)
         3. Syntactic Complexity (structure sophistication)
-        4. AI-ism Inversed (humanness)
-        5. Passive Voice Ratio (activity vs passivity)
-        6. Overall Authenticity
+        4. AI-ism Likelihood (human-like)
+        5. Function Word Ratio (human-like)
+        6. Discourse Marker Density (human-like)
+        7. Information Density (human-like)
+        8. Epistemic Hedging (human-like)
         
         Args:
             original_metrics: Metrics dict from original text
@@ -42,30 +44,31 @@ class RadarChartGenerator:
             'Burstiness<br>(Variation)',
             'Lexical Diversity<br>(Vocabulary)',
             'Syntactic Complexity<br>(Structure)',
-            'Authenticity<br>(vs AI-isms)',
-            'Activity<br>(vs Passive)',
-            'Overall Voice<br>Preservation'
+            'AI-ism<br>(Human-like)',
+            'Function Words<br>(Human-like)',
+            'Discourse Markers<br>(Human-like)',
+            'Information Density<br>(Human-like)',
+            'Hedging<br>(Human-like)'
         ]
+
+        def to_human_like(values: Dict[str, float]) -> List[float]:
+            """Convert normalized metrics to a consistent human-like direction."""
+            return [
+                values.get('burstiness', 0),
+                values.get('lexical_diversity', 0),
+                values.get('syntactic_complexity', 0),
+                values.get('ai_ism_likelihood', 0),
+                1 - values.get('function_word_ratio', 0),
+                1 - values.get('discourse_marker_density', 0),
+                1 - values.get('information_density', 0),
+                1 - values.get('epistemic_hedging', 0),
+            ]
         
         # Original values (already normalized 0-1)
-        original_values = [
-            original_metrics.get('burstiness', 0),
-            original_metrics.get('lexical_diversity', 0),
-            original_metrics.get('syntactic_complexity', 0),
-            1 - (original_metrics.get('ai_ism_likelihood', 0) / 100),  # Invert AI-ism
-            1 - original_metrics.get('passive_voice_ratio', 0),  # Invert passive
-            0.75,  # Composite authenticity (heuristic)
-        ]
+        original_values = to_human_like(original_metrics)
         
         # Edited values
-        edited_values = [
-            edited_metrics.get('burstiness', 0),
-            edited_metrics.get('lexical_diversity', 0),
-            edited_metrics.get('syntactic_complexity', 0),
-            1 - (edited_metrics.get('ai_ism_likelihood', 0) / 100),
-            1 - edited_metrics.get('passive_voice_ratio', 0),
-            0.65,  # Composite (typically lower after editing)
-        ]
+        edited_values = to_human_like(edited_metrics)
         
         fig = go.Figure()
         
@@ -98,7 +101,7 @@ class RadarChartGenerator:
                 )
             ),
             showlegend=True,
-            title="Metric Comparison: Original vs Edited",
+            title="Core 8 Metric Comparison: Original vs Edited",
             height=600,
             hovermode='closest',
         )
@@ -130,6 +133,10 @@ class BarChartGenerator:
             ('Lexical Diversity', original_metrics.get('lexical_diversity_raw', 0), edited_metrics.get('lexical_diversity_raw', 0), 1.0),
             ('Syntactic Complexity', original_metrics.get('syntactic_complexity_raw', 0), edited_metrics.get('syntactic_complexity_raw', 0), 1.0),
             ('AI-ism Likelihood', original_metrics.get('ai_ism_likelihood_raw', 0), edited_metrics.get('ai_ism_likelihood_raw', 0), 100),
+            ('Function Word Ratio', original_metrics.get('function_word_ratio_raw', 0), edited_metrics.get('function_word_ratio_raw', 0), 1.0),
+            ('Discourse Marker Density', original_metrics.get('discourse_marker_density_raw', 0), edited_metrics.get('discourse_marker_density_raw', 0), 30.0),
+            ('Information Density', original_metrics.get('information_density_raw', 0), edited_metrics.get('information_density_raw', 0), 1.0),
+            ('Epistemic Hedging', original_metrics.get('epistemic_hedging_raw', 0), edited_metrics.get('epistemic_hedging_raw', 0), 0.15),
         ]
         
         names = [m[0] for m in metrics]
@@ -168,12 +175,25 @@ class DeltaVisualization:
             Plotly figure object
         """
         
-        metric_names = ['Burstiness', 'Lexical Diversity', 'Syntactic Complexity', 'AI-ism Likelihood']
+        metric_names = [
+            'Burstiness',
+            'Lexical Diversity',
+            'Syntactic Complexity',
+            'AI-ism Likelihood',
+            'Function Word Ratio',
+            'Discourse Marker Density',
+            'Information Density',
+            'Epistemic Hedging',
+        ]
         changes_pct = [
             deltas.get('burstiness_pct_change', 0),
             deltas.get('lexical_diversity_pct_change', 0),
             deltas.get('syntactic_complexity_pct_change', 0),
             deltas.get('ai_ism_likelihood_pct_change', 0),
+            deltas.get('function_word_ratio_pct_change', 0),
+            deltas.get('discourse_marker_density_pct_change', 0),
+            deltas.get('information_density_pct_change', 0),
+            deltas.get('epistemic_hedging_pct_change', 0),
         ]
         
         colors = ['#d62728' if x < 0 else '#2ca02c' for x in changes_pct]

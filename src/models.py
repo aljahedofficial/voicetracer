@@ -29,6 +29,10 @@ class MetricScores:
     lexical_diversity: float
     syntactic_complexity: float
     ai_ism_likelihood: float
+    function_word_ratio: float
+    discourse_marker_density: float
+    information_density: float
+    epistemic_hedging: float
 
 
 @dataclass
@@ -42,6 +46,14 @@ class MetricDeltas:
     syntactic_complexity_pct_change: float
     ai_ism_delta: float
     ai_ism_pct_change: float
+    function_word_ratio_delta: float
+    function_word_ratio_pct_change: float
+    discourse_marker_density_delta: float
+    discourse_marker_density_pct_change: float
+    information_density_delta: float
+    information_density_pct_change: float
+    epistemic_hedging_delta: float
+    epistemic_hedging_pct_change: float
 
 
 @dataclass
@@ -113,6 +125,10 @@ class Benchmark:
     lexical_diversity: float
     syntactic_complexity: float
     ai_ism_likelihood: float
+    function_word_ratio: float
+    discourse_marker_density: float
+    information_density: float
+    epistemic_hedging: float
     description: str = ""
     source: str = ""
 
@@ -145,6 +161,10 @@ DEFAULT_BENCHMARKS = [
         lexical_diversity=0.68,
         syntactic_complexity=18.5,
         ai_ism_likelihood=5.2,
+        function_word_ratio=0.52,
+        discourse_marker_density=9.0,
+        information_density=0.62,
+        epistemic_hedging=0.11,
         description="Baseline from native English speakers",
         source="Agarwal et al. 2024"
     ),
@@ -154,6 +174,10 @@ DEFAULT_BENCHMARKS = [
         lexical_diversity=0.55,
         syntactic_complexity=16.2,
         ai_ism_likelihood=3.1,
+        function_word_ratio=0.50,
+        discourse_marker_density=8.0,
+        information_density=0.58,
+        epistemic_hedging=0.09,
         description="L2 learner writing without AI assistance",
         source="VoiceTracer Study"
     ),
@@ -163,6 +187,10 @@ DEFAULT_BENCHMARKS = [
         lexical_diversity=0.42,
         syntactic_complexity=19.3,
         ai_ism_likelihood=78.5,
+        function_word_ratio=0.60,
+        discourse_marker_density=18.0,
+        information_density=0.42,
+        epistemic_hedging=0.04,
         description="Text edited by ChatGPT with 'grammar only' prompt",
         source="VoiceTracer Study"
     ),

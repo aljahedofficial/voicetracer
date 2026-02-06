@@ -1,0 +1,438 @@
+the common logics and signals most AI-writing detectors rely on. Different tools weight these differently, but the foundations are remarkably similar.
+
+1. Perplexity (Predictability of Language)
+
+This is the core mathematical signal behind almost all detectors.
+
+Human writing:
+
+uneven
+
+sometimes surprising
+
+locally inconsistent
+
+includes odd word choices or structure shifts
+
+AI writing:
+
+statistically very predictable
+
+follows high-probability word sequences
+
+avoids rare constructions
+
+Detectors measure how “expected” each next word is given the previous ones.
+Lower perplexity → more likely AI-generated.
+
+2. Burstiness (Variance in Sentence Structure)
+
+Humans write in bursts:
+
+short sentence → long sentence → fragment → long explanation
+
+AI tends to:
+
+maintain similar sentence length
+
+maintain similar syntactic depth
+
+distribute complexity evenly
+
+Low variance across sentences = algorithmic smoothness, a strong AI signal.
+
+3. Lexical Uniformity
+
+AI writing often:
+
+repeats the same connective phrases (“Moreover”, “Furthermore”, “In addition”)
+
+prefers neutral academic vocabulary
+
+avoids slang, idiosyncratic phrasing, or cultural shortcuts
+
+Detectors track:
+
+type–token ratio
+
+synonym reuse patterns
+
+overuse of mid-frequency academic words
+
+Too balanced = suspicious.
+
+4. Over-Explicit Logical Linking
+
+AI explains everything.
+
+Common AI traits:
+
+excessive causal markers (“therefore”, “as a result”)
+
+restating the obvious
+
+summarizing points already made
+
+signaling structure too clearly
+
+Human writers often:
+
+imply connections
+
+leave logical gaps
+
+assume shared context
+
+Over-signposting = machine-like coherence.
+
+5. Emotional Flatness (Even When Personal)
+
+Even first-person AI writing often:
+
+sounds reflective but emotionally neutral
+
+avoids strong judgments
+
+lacks hesitation, doubt, or contradiction
+
+Detectors look for:
+
+low sentiment variance
+
+absence of emotional spikes
+
+safe, balanced tone throughout
+
+Humans are messier. AI is calm.
+
+6. Consistent Register (No Voice Drift)
+
+Humans drift:
+
+formal → informal
+
+confident → uncertain
+
+precise → vague
+
+AI usually:
+
+stays in one register
+
+maintains tone discipline
+
+avoids spontaneous voice shifts
+
+Register rigidity is a major detection clue.
+
+7. Lack of True Error Patterns
+
+Humans make:
+
+asymmetric mistakes
+
+idiosyncratic grammar slips
+
+context-dependent errors
+
+AI either:
+
+makes no errors
+
+or makes “symmetrical” errors that repeat logically
+
+Too clean or too evenly flawed = AI signal.
+
+8. Semantic Density Without Compression
+
+AI writing often:
+
+uses many words to say little
+
+explains instead of showing
+
+prefers abstraction over concrete detail
+
+Detectors measure:
+
+information density
+
+redundancy ratios
+
+concept repetition without expansion
+
+High verbosity + low novelty = machine pattern.
+
+9. Paragraph-Level Structural Regularity
+
+AI paragraphs often:
+
+start with a topic sentence
+
+expand logically
+
+conclude with a summary or transition
+
+Humans:
+
+sometimes ramble
+
+interrupt themselves
+
+abandon symmetry
+
+Over-perfect paragraph symmetry is suspicious.
+
+10. Training-Data Echoes
+
+Advanced detectors check for:
+
+phrasing common in LLM outputs
+
+academic clichés frequent in AI datasets
+
+generic framing patterns
+
+This isn’t plagiarism — it’s distributional similarity.
+
+11. Absence of Situated Context
+
+Humans reference:
+
+time pressure
+
+emotions in the moment
+
+irrelevant but real details
+
+AI tends to:
+
+generalize experience
+
+remove unnecessary specificity
+
+narrate experience as analysis
+
+Lived messiness is hard to fake statistically.
+
+12. Cross-Model Agreement
+
+Some detectors:
+
+run text through multiple LMs
+
+measure similarity in probability distribution
+
+If many models find the text “easy to generate,” confidence rises.
+
+
+
+Metrics to use:
+1. Perplexity (PPL)
+
+What it measures
+How predictable a text is to a language model.
+
+Definition (simplified)
+Average inverse probability of each next token given prior context.
+
+Typical ranges (approximate, model-dependent)
+
+Human academic writing: 35–80
+
+Mixed / edited AI text: 20–35
+
+Pure AI-generated text: 5–20
+
+Interpretation
+Lower perplexity → text is statistically easier to generate → higher AI likelihood.
+
+Used by
+GPTZero, Turnitin AI (indirectly), OpenAI classifier research
+
+2. Burstiness (Sentence-Length Variance)
+
+What it measures
+Variation in sentence length across a document.
+
+Metric
+Standard deviation of sentence lengths (in tokens or words).
+
+Indicative values
+
+Human writing: high variance (SD often > 10–15 words)
+
+AI writing: low variance (SD often < 8–10 words)
+
+Interpretation
+Low variance = uniform rhythm = machine-like regularity.
+
+3. Type–Token Ratio (TTR)
+
+What it measures
+Lexical diversity.
+
+Formula
+Unique words ÷ total words
+
+Typical values
+
+Human academic prose: 0.45–0.65
+
+AI academic prose: 0.30–0.45
+
+Limitation
+TTR drops with longer texts, so often normalized.
+
+4. Moving-Average TTR (MATTR)
+
+What it measures
+Lexical diversity adjusted for text length.
+
+Metric
+Average TTR across sliding windows (e.g., 100 words).
+
+Indicative ranges
+
+Human: 0.55–0.70
+
+AI: 0.40–0.55
+
+Why it matters
+Detectors prefer MATTR over raw TTR for stability.
+
+5. Lexical Sophistication Index
+
+What it measures
+Proportion of mid-frequency vs rare words.
+
+Metric
+
+% of words in top 2,000–10,000 frequency bands
+
+Typical pattern
+
+AI text clusters heavily in mid-frequency vocabulary
+
+Human text shows spikier distribution (rare + common mix)
+
+Interpretation
+Too balanced = suspicious.
+
+6. Function-Word Ratio
+
+What it measures
+Proportion of grammatical words (articles, prepositions, auxiliaries).
+
+Metric
+Function words ÷ total words
+
+Typical values
+
+Human writing: 45–55%
+
+AI writing: 55–65%
+
+Why detectors care
+LLMs rely heavily on syntactic scaffolding.
+
+7. Discourse Marker Density
+
+What it measures
+Explicit logical connectors.
+
+Examples counted
+“Moreover”, “Therefore”, “In addition”, “However”, “As a result”
+
+Metric
+Markers per 1,000 words
+
+Indicative values
+
+Human: 5–15 / 1,000
+
+AI: 15–30+ / 1,000
+
+Over-signposting is a strong AI cue.
+
+8. Sentence Tree Depth (Syntactic Complexity)
+
+What it measures
+Depth of syntactic parse trees.
+
+Metric
+Average dependency depth per sentence.
+
+Pattern
+
+Human writing: high variance
+
+AI writing: moderate but uniform depth
+
+Key signal
+Consistency matters more than raw complexity.
+
+9. Repetition Rate (Semantic Redundancy)
+
+What it measures
+How often ideas are restated with minimal novelty.
+
+Metric
+Cosine similarity between adjacent sentences or paragraphs.
+
+Typical pattern
+
+Human: fluctuating similarity
+
+AI: consistently high similarity (semantic smoothing)
+
+10. Information Density
+
+What it measures
+Conceptual novelty per word.
+
+Proxy metrics
+
+Named entities per 1,000 words
+
+Content words ÷ total words
+
+Indicative pattern
+
+AI: high word count, low entity density
+
+Human: lower verbosity, higher specificity
+
+11. Register Stability Index
+
+What it measures
+Tone consistency across sections.
+
+Metric
+Variance in formality, sentiment, or syntactic complexity scores.
+
+Interpretation
+Near-zero variance → machine-like control.
+
+12. Cross-Model Probability Agreement
+
+What it measures
+How similarly different LMs predict the same text.
+
+Metric
+Correlation of token probabilities across models.
+
+Pattern
+High agreement = text lies near training-data “center of gravity”.
+
+How These Are Used in Practice
+
+Most detectors do not rely on a single metric. Instead they:
+
+normalize metrics
+
+weight them
+
+combine them into a classifier score
+
+That’s why a text can “feel human” yet still score 90% AI statistically.

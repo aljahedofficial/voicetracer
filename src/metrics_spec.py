@@ -17,6 +17,10 @@ class MetricType(Enum):
     LEXICAL_DIVERSITY = "lexical_diversity"
     SYNTACTIC_COMPLEXITY = "syntactic_complexity"
     AI_ISM_LIKELIHOOD = "ai_ism_likelihood"
+    FUNCTION_WORD_RATIO = "function_word_ratio"
+    DISCOURSE_MARKER_DENSITY = "discourse_marker_density"
+    INFORMATION_DENSITY = "information_density"
+    EPISTEMIC_HEDGING = "epistemic_hedging"
 
 
 @dataclass
@@ -207,6 +211,104 @@ AI_ISM_DEFINITION = MetricDefinition(
 )
 
 
+# ==========================================================================
+# METRIC 5: FUNCTION WORD RATIO
+# ==========================================================================
+FUNCTION_WORD_RATIO_DEFINITION = MetricDefinition(
+    metric_type=MetricType.FUNCTION_WORD_RATIO,
+    name="Function Word Ratio",
+    short_description="Ratio of grammatical scaffolding words",
+    long_description="""
+    Measures the proportion of function words (articles, prepositions, pronouns,
+    auxiliaries, conjunctions) relative to total words.
+    AI writing often has higher function word ratios due to over-scaffolded syntax.
+    """,
+    formula="function_words / total_words",
+    range_min=0.0,
+    range_max=1.0,
+    optimal_value=0.52,
+    interpretation_low="Content-heavy wording; more human-like efficiency",
+    interpretation_high="Over-scaffolded syntax; more AI-like",
+    thesis_relevance="""
+    AI systems favor safe, grammatical scaffolding, increasing function words.
+    Human writers rely more on content words and varied phrasing.
+    """,
+)
+
+
+# ==========================================================================
+# METRIC 6: DISCOURSE MARKER DENSITY
+# ==========================================================================
+DISCOURSE_MARKER_DENSITY_DEFINITION = MetricDefinition(
+    metric_type=MetricType.DISCOURSE_MARKER_DENSITY,
+    name="Discourse Marker Density",
+    short_description="Frequency of explicit logical connectors",
+    long_description="""
+    Measures the density of discourse markers (moreover, therefore, in conclusion)
+    per 1,000 words. AI writing tends to over-signpost structure.
+    """,
+    formula="(discourse_markers / total_words) * 1000",
+    range_min=0.0,
+    range_max=50.0,
+    optimal_value=10.0,
+    interpretation_low="Implicit flow; more human-like",
+    interpretation_high="Over-signposted structure; more AI-like",
+    thesis_relevance="""
+    AI outputs rely on explicit connectors to maintain coherence,
+    increasing discourse marker density.
+    """,
+)
+
+
+# ==========================================================================
+# METRIC 7: INFORMATION DENSITY
+# ==========================================================================
+INFORMATION_DENSITY_DEFINITION = MetricDefinition(
+    metric_type=MetricType.INFORMATION_DENSITY,
+    name="Information Density",
+    short_description="Specific content per word",
+    long_description="""
+    Estimates how much concrete information appears relative to word count.
+    Combines content-word ratio, unique content ratio, and proper noun density.
+    Low density suggests verbose, generic text typical of AI.
+    """,
+    formula="(content_ratio * 0.5) + (unique_content_ratio * 0.3) + (proper_noun_density * 0.2)",
+    range_min=0.0,
+    range_max=1.0,
+    optimal_value=0.60,
+    interpretation_low="Verbose, low-specificity text; more AI-like",
+    interpretation_high="Concrete, efficient wording; more human-like",
+    thesis_relevance="""
+    AI tends to expand with generic filler. Human writing is denser with concrete
+    details and distinct content words.
+    """,
+)
+
+
+# ==========================================================================
+# METRIC 8: EPISTEMIC HEDGING INDEX
+# ==========================================================================
+EPISTEMIC_HEDGING_DEFINITION = MetricDefinition(
+    metric_type=MetricType.EPISTEMIC_HEDGING,
+    name="Epistemic Hedging Index",
+    short_description="Markers of uncertainty and humility",
+    long_description="""
+    Measures the frequency of hedging and uncertainty markers. Human writers
+    often hedge claims; AI text can be overconfident and under-hedged.
+    """,
+    formula="(hedges + qualifiers) / total_words",
+    range_min=0.0,
+    range_max=0.20,
+    optimal_value=0.10,
+    interpretation_low="Overconfident phrasing; more AI-like",
+    interpretation_high="Hedged, nuanced phrasing; more human-like",
+    thesis_relevance="""
+    AI outputs often sound overly certain. Hedging frequency is a strong indicator
+    of authentic human reasoning in academic writing.
+    """,
+)
+
+
 # ============================================================================
 # AI-ISM PHRASE DATABASE
 # ============================================================================
@@ -258,6 +360,53 @@ AI_ISM_PHRASES = {
 }
 
 
+# ==========================================================================
+# LEXICONS FOR NEW METRICS
+# ==========================================================================
+FUNCTION_WORDS = {
+    "a", "an", "the", "and", "or", "but", "nor", "for", "so", "yet",
+    "in", "on", "at", "by", "for", "with", "about", "against", "between",
+    "into", "through", "during", "before", "after", "above", "below",
+    "to", "from", "up", "down", "out", "over", "under", "again", "further",
+    "then", "once", "here", "there", "when", "where", "why", "how",
+    "all", "any", "both", "each", "few", "more", "most", "other", "some",
+    "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too",
+    "very", "can", "will", "just", "don", "should", "now",
+    "is", "are", "was", "were", "be", "been", "being", "am",
+    "do", "does", "did", "have", "has", "had", "having",
+    "i", "me", "my", "mine", "we", "us", "our", "ours", "you", "your",
+    "yours", "he", "him", "his", "she", "her", "hers", "it", "its",
+    "they", "them", "their", "theirs", "this", "that", "these", "those",
+    "if", "because", "while", "although", "though", "since", "unless",
+    "as", "until", "whether", "than",
+}
+
+DISCOURSE_MARKERS = {
+    "moreover", "therefore", "however", "furthermore", "consequently", "thus",
+    "in conclusion", "on the other hand", "for instance", "for example",
+    "in addition", "as a result", "in contrast", "in summary", "to conclude",
+    "additionally", "meanwhile", "subsequently", "nevertheless", "nonetheless",
+    "indeed", "in other words", "by contrast", "as such", "overall",
+}
+
+HEDGING_MARKERS = {
+    "perhaps", "arguably", "possibly", "probably", "likely", "unlikely",
+    "it seems", "it appears", "suggests", "may", "might", "could",
+    "tends to", "in my view", "i think", "i believe", "one could argue",
+    "it is possible", "it is plausible",
+}
+
+CONFIDENCE_MARKERS = {
+    "certainly", "definitely", "absolutely", "undoubtedly", "clearly",
+    "obviously", "without doubt", "must be", "is clear that",
+}
+
+QUALIFICATION_MARKERS = {
+    "however", "although", "though", "yet", "still", "but", "while",
+    "nevertheless", "nonetheless",
+}
+
+
 # ============================================================================
 # METRIC NORMALIZATION RULES
 # ============================================================================
@@ -290,6 +439,24 @@ def normalize_metric(metric_value: float, metric_type: MetricType) -> float:
         # But invert interpretation (high = bad)
         raw_norm = min(metric_value / 100.0, 1.0)
         return 1.0 - raw_norm  # Invert: high AI-ism = low human-ness
+
+    elif metric_type == MetricType.FUNCTION_WORD_RATIO:
+        # 0.45-0.65 is typical; higher is more AI-like
+        normalized = (metric_value - 0.45) / 0.20
+        return max(0.0, min(normalized, 1.0))
+
+    elif metric_type == MetricType.DISCOURSE_MARKER_DENSITY:
+        # Per 1000 words, cap at 30
+        return min(metric_value / 30.0, 1.0)
+
+    elif metric_type == MetricType.INFORMATION_DENSITY:
+        # Already 0-1, but invert so lower density = more AI-like
+        return 1.0 - min(metric_value, 1.0)
+
+    elif metric_type == MetricType.EPISTEMIC_HEDGING:
+        # Hedge rate 0-0.15; lower hedging = more AI-like
+        normalized = (0.15 - metric_value) / 0.12
+        return max(0.0, min(normalized, 1.0))
     
     return metric_value
 
@@ -330,6 +497,26 @@ def interpret_metric(metric_value: float, metric_type: MetricType) -> Dict[str, 
             "low": "Natural human-like patterns",
             "medium": "Mixed characteristics",
             "high": "Formulaic AI-like patterns"
+        },
+        MetricType.FUNCTION_WORD_RATIO: {
+            "low": "Content-heavy wording",
+            "medium": "Balanced scaffolding",
+            "high": "Over-scaffolded syntax"
+        },
+        MetricType.DISCOURSE_MARKER_DENSITY: {
+            "low": "Implicit flow",
+            "medium": "Balanced signposting",
+            "high": "Over-signposted structure"
+        },
+        MetricType.INFORMATION_DENSITY: {
+            "low": "Verbose, generic wording",
+            "medium": "Moderate specificity",
+            "high": "Dense, concrete content"
+        },
+        MetricType.EPISTEMIC_HEDGING: {
+            "low": "Overconfident tone",
+            "medium": "Moderately hedged",
+            "high": "Nuanced, hedged tone"
         }
     }
     
@@ -421,6 +608,73 @@ METRIC_NARRATIVES = {
         "recommendation": (
             "Revert some AI suggestions in favor of your original phrasing, especially "
             "opening and closing sentences where your voice matters most."
+        ),
+    },
+    MetricType.FUNCTION_WORD_RATIO: {
+        "what_is_it": (
+            "Function word ratio measures how much grammatical scaffolding (articles, "
+            "prepositions, pronouns) appears in your text."
+        ),
+        "why_matters": (
+            "AI editing often increases function words to smooth grammar and flow, "
+            "which can make writing feel more uniform and less content-dense."
+        ),
+        "why_changed": (
+            "Edits that add connectors, articles, and auxiliaries raise the ratio and "
+            "signal more formulaic phrasing."
+        ),
+        "recommendation": (
+            "Tighten sentences where possible and keep your original content-heavy wording "
+            "when it remains clear and correct."
+        ),
+    },
+    MetricType.DISCOURSE_MARKER_DENSITY: {
+        "what_is_it": (
+            "Discourse marker density counts explicit connectors like 'moreover' and "
+            "'therefore' per 1,000 words."
+        ),
+        "why_matters": (
+            "AI outputs often over-signpost arguments, which can make the text feel "
+            "formulaic or overly guided."
+        ),
+        "why_changed": (
+            "When AI inserts extra transitions to structure ideas, density rises and "
+            "the flow becomes more explicit."
+        ),
+        "recommendation": (
+            "Remove repeated connectors and rely on paragraph structure to convey flow."
+        ),
+    },
+    MetricType.INFORMATION_DENSITY: {
+        "what_is_it": (
+            "Information density estimates how much concrete content appears per word, "
+            "based on content words and proper noun signals."
+        ),
+        "why_matters": (
+            "AI edits can expand text with generic phrasing, reducing specificity and "
+            "making writing feel less focused."
+        ),
+        "why_changed": (
+            "Generic expansions and paraphrases dilute concrete details, lowering density."
+        ),
+        "recommendation": (
+            "Reintroduce specific facts, names, or precise terminology where appropriate."
+        ),
+    },
+    MetricType.EPISTEMIC_HEDGING: {
+        "what_is_it": (
+            "Epistemic hedging tracks uncertainty markers (e.g., 'might', 'perhaps') that "
+            "signal nuanced academic caution."
+        ),
+        "why_matters": (
+            "Human academic writing often hedges claims. AI edits can sound more certain, "
+            "which flattens nuance."
+        ),
+        "why_changed": (
+            "Overconfident revisions reduce hedging and shift tone toward certainty."
+        ),
+        "recommendation": (
+            "Restore hedging where claims are probabilistic or still under debate."
         ),
     },
 }

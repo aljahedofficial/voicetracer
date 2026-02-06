@@ -10,17 +10,20 @@ VoiceTracer makes this trade-off **visible and measurable**.
 
 ### Key Features
 
-✅ **4 Research-Backed Metrics**
+✅ **8 Lightweight Metrics**
 - Burstiness (sentence length variation)
 - Lexical Diversity (vocabulary richness)
 - Syntactic Complexity (structure sophistication)
 - AI-ism Likelihood (formulaic pattern detection)
+- Function Word Ratio (grammatical scaffolding)
+- Discourse Marker Density (signposting frequency)
+- Information Density (specific content per word)
+- Epistemic Hedging (uncertainty markers)
 
 ✅ **4-Step Dashboard Workflow**
 1. Input original & edited texts
 2. View detailed metric comparison
 3. Visualize differences with interactive charts
-4. Export in 8+ formats
 
 ✅ **Multiple Export Formats**
 PDF, Excel, Word, PowerPoint, CSV, JSON, PNG, ZIP
@@ -149,6 +152,26 @@ Examples:
 
 Texts > 50 likely AI-edited; > 80 likely AI-generated.
 
+### Function Word Ratio
+**Method:** Function words / total words
+
+High ratios suggest over-scaffolded syntax common in AI writing.
+
+### Discourse Marker Density
+**Method:** Discourse markers per 1,000 words
+
+AI text tends to overuse explicit connectors ("moreover", "therefore").
+
+### Information Density
+**Method:** Content-word ratio + unique content + proper noun signals
+
+Low density suggests verbose, generic language.
+
+### Epistemic Hedging
+**Method:** Hedging markers per word
+
+Human writers hedge claims more often than AI-generated text.
+
 ---
 
 ## Use Cases
@@ -178,7 +201,7 @@ Texts > 50 likely AI-edited; > 80 likely AI-generated.
 ## Technology Stack
 
 - **Framework**: Streamlit (interactive web UI)
-- **NLP**: spaCy, NLTK (text analysis)
+- **NLP**: Rule-based tokenization + lightweight heuristics
 - **Data**: pandas (analysis & export)
 - **Visualization**: Plotly (interactive charts)
 - **Export**: reportlab, python-docx, openpyxl, python-pptx

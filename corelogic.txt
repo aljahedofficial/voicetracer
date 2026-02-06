@@ -1,0 +1,1312 @@
+# Integrated AI Detection Metrics Framework
+## Complete Logic & Calculation Guide
+
+---
+
+## PART 1: ORIGINAL 12 METRICS (DETAILED CALCULATION LOGIC)
+
+### 1. PERPLEXITY (PPL)
+**What it measures:** Statistical predictability of text to language models.
+
+**Calculation:**
+```
+PPL = exp(-1/N * Σ(log P(word_i | context)))
+
+Where:
+- N = total number of words in text
+- P(word_i | context) = probability of word_i given all prior words
+- log = natural logarithm
+```
+
+**Implementation steps:**
+1. Pass text through trained language model (e.g., GPT-2, BERT, or target model)
+2. For each token, retrieve model's probability distribution over vocabulary
+3. Extract probability P(actual_token | context)
+4. Take natural log of this probability
+5. Average all log-probabilities across text
+6. Apply negative exponent
+
+**Normalization (0-1 scale):**
+```
+PPL_normalized = 1 / (1 + (PPL / 100))
+Where values closer to 1 = more AI-like
+```
+
+**Thresholds:**
+- Human academic: PPL 35–80 → normalized: 0.15–0.35
+- Mixed/edited AI: PPL 20–35 → normalized: 0.35–0.55
+- Pure AI: PPL 5–20 → normalized: 0.55–0.95
+
+**Signal interpretation:**
+- Lower PPL (higher normalized score) = text follows training distribution closely = AI indicator
+- Higher PPL (lower normalized score) = text deviates from learned patterns = Human indicator
+
+---
+
+### 2. BURSTINESS (Sentence-Length Variance)
+**What it measures:** Rhythm regularity in sentence construction.
+
+**Calculation:**
+```
+Sentence lengths: L = [l_1, l_2, ..., l_n] (in tokens or words)
+
+Mean sentence length: μ = (Σ L_i) / n
+
+Variance: σ² = Σ(L_i - μ)² / n
+
+Standard Deviation: σ = √(σ²)
+
+Coefficient of Variation (normalized): CV = σ / μ
+```
+
+**Implementation steps:**
+1. Split text into sentences (use NLTK or spaCy)
+2. Tokenize each sentence
+3. Count tokens/words per sentence
+4. Calculate mean and standard deviation
+5. Compute coefficient of variation for scale-independence
+
+**Thresholds:**
+- Human writing: σ > 10–15 words, CV > 0.40
+- AI writing: σ < 8–10 words, CV < 0.30
+
+**Normalization (0-1, inverted because low variance = AI):**
+```
+Burstiness_score = 1 - min(CV / 0.50, 1.0)
+Where higher score = more AI-like
+```
+
+**Signal interpretation:**
+- High variance (low score) = natural, varied rhythm = Human
+- Low variance (high score) = mechanical, uniform rhythm = AI
+
+---
+
+### 3. TYPE-TOKEN RATIO (TTR)
+**What it measures:** Lexical diversity.
+
+**Calculation:**
+```
+V = count of unique word types (lemmatized)
+N = total word count
+
+TTR = V / N
+```
+
+**Implementation steps:**
+1. Tokenize entire text
+2. Lemmatize tokens (convert to base form: running → run)
+3. Count unique lemmas (V)
+4. Count total tokens (N)
+5. Divide V by N
+
+**Thresholds:**
+- Human academic prose: TTR 0.45–0.65
+- AI academic prose: TTR 0.30–0.45
+
+**Caveat & Solution:**
+TTR decreases with text length (longer texts reuse words). Raw TTR is problematic for documents >1000 words.
+
+**Normalization (0-1, inverted because low TTR = AI):**
+```
+TTR_normalized = min(TTR / 0.65, 1.0)
+Where higher = more human-like
+```
+
+**Signal interpretation:**
+- High TTR (low score) = varied vocabulary = Human
+- Low TTR (high score) = repetitive vocabulary = AI
+
+---
+
+### 4. MOVING-AVERAGE TYPE-TOKEN RATIO (MATTR)
+**What it measures:** Length-adjusted lexical diversity.
+
+**Calculation:**
+```
+Window size: W = 100 words (recommended)
+Number of windows: k = floor((N - W) / step_size) + 1
+Step size: typically 50 words (50% overlap)
+
+For each window w from 0 to k-1:
+  Start = w * step_size
+  End = Start + W
+  TTR_w = unique_words_in_window / W
+
+MATTR = (Σ TTR_w) / k
+```
+
+**Implementation steps:**
+1. Split text into overlapping 100-word windows (50-word step)
+2. For each window, count unique lemmas and total words
+3. Calculate TTR for each window
+4. Average all window TTRs
+
+**Thresholds:**
+- Human: MATTR 0.55–0.70
+- AI: MATTR 0.40–0.55
+
+**Normalization (0-1):**
+```
+MATTR_normalized = min(MATTR / 0.70, 1.0)
+Where higher = more human-like
+```
+
+**Signal interpretation:**
+- High MATTR (low score) = consistent vocabulary diversity across document = Human
+- Low MATTR (high score) = vocabulary diversity drops in sections = AI (reuses ideas)
+
+---
+
+### 5. LEXICAL SOPHISTICATION INDEX (LSI)
+**What it measures:** Distribution of word frequency bands.
+
+**Calculation:**
+```
+Define frequency bands (using corpus like COCA or BNC):
+- Band 1: Top 1,000 most frequent words
+- Band 2: Words 1,001–2,000 (mid-common)
+- Band 3: Words 2,001–10,000 (mid-rare)
+- Band 4: Words 10,001+ (rare)
+
+LSI_score = (Count_Band2 + Count_Band3) / Total_words
+
+Alternative: Calculate entropy of distribution
+H = -Σ(p_i * log(p_i))
+Where p_i = proportion of words in band i
+```
+
+**Implementation steps:**
+1. Load word frequency corpus (COCA top 20,000 works well)
+2. For each word in text, determine frequency band
+3. Count words in mid-frequency bands (1,001–10,000)
+4. Calculate proportion
+5. Optionally compute entropy for distribution shape
+
+**Thresholds:**
+- Human text: LSI 0.35–0.55 (spiky distribution)
+- AI text: LSI 0.55–0.75 (flat distribution, concentrated in mid-bands)
+
+**Normalization (0-1, inverted):**
+```
+LSI_normalized = min(LSI_score / 0.65, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- Balanced mid-frequency clustering (high score) = AI (text book smoothness)
+- Spiky distribution with rare words (low score) = Human (authentic vocabulary mix)
+
+---
+
+### 6. FUNCTION-WORD RATIO (FWR)
+**What it measures:** Proportion of grammatical scaffolding words.
+
+**Calculation:**
+```
+Function words = {articles, prepositions, pronouns, auxiliaries, 
+                  conjunctions, modal verbs, determiners}
+Typical list: "a", "an", "the", "is", "are", "in", "of", "to", "and", "or", 
+             "but", "as", "by", "for", "with", "on", "at", "be", "have", "do"
+
+FWR = Count(function_words) / Total_words
+```
+
+**Implementation steps:**
+1. Define canonical function word list (POS tags: DET, ADP, CONJ, AUX)
+2. Tokenize text
+3. Tag POS (part-of-speech) using spaCy or NLTK
+4. Count tokens with FW POS tags
+5. Divide by total tokens
+
+**Thresholds:**
+- Human writing: FWR 45–55% (0.45–0.55)
+- AI writing: FWR 55–65% (0.55–0.65)
+
+**Normalization (0-1, inverted because high FWR = AI):**
+```
+FWR_normalized = min((FWR - 0.45) / 0.20, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- Lower FWR (low score) = relies on content words = Human (economical)
+- Higher FWR (high score) = over-scaffolded syntax = AI (template-like)
+
+---
+
+### 7. DISCOURSE MARKER DENSITY (DMD)
+**What it measures:** Frequency of explicit logical connectors.
+
+**Calculation:**
+```
+Discourse markers = {"moreover", "therefore", "in addition", "however", 
+                    "as a result", "furthermore", "consequently", "thus", 
+                    "in conclusion", "on the other hand", "for instance", 
+                    "indeed", "additionally", "meanwhile", "subsequently"}
+
+Count_DM = number of discourse markers in text
+Word_count = total words
+
+DMD = (Count_DM / Word_count) * 1000  [per 1,000 words]
+```
+
+**Implementation steps:**
+1. Create comprehensive discourse marker lexicon (build from linguistic research)
+2. Tokenize text
+3. Perform case-insensitive substring matching on multi-word markers
+4. Count total occurrences
+5. Normalize to per-1000-word rate
+
+**Thresholds:**
+- Human: DMD 5–15 per 1,000 words
+- AI: DMD 15–30+ per 1,000 words
+
+**Normalization (0-1, inverted):**
+```
+DMD_normalized = min(DMD / 30, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- Lower DMD (low score) = sparse explicit signposting = Human (implicit logic)
+- Higher DMD (high score) = over-explicit connectors = AI (over-signposted structure)
+
+---
+
+### 8. SENTENCE TREE DEPTH (STD) - Syntactic Complexity
+**What it measures:** Depth and complexity of syntactic dependency trees.
+
+**Calculation:**
+```
+For each sentence, parse into dependency tree:
+- Root node = main predicate
+- Max depth = longest path from root to leaf
+
+Depth_sentence_i = maximum edge depth from root
+
+Average Tree Depth = Σ(Depth_i) / n_sentences
+
+Depth Variance = √(Σ(Depth_i - mean_depth)²) / n_sentences
+```
+
+**Implementation steps:**
+1. Use spaCy or similar for dependency parsing
+2. For each sentence, extract dependency tree
+3. Calculate maximum depth (longest path root→leaf)
+4. Average across all sentences
+5. Calculate variance to detect consistency
+
+**Thresholds:**
+- Human writing: Depth 3–5, high variance (SD > 1.0)
+- AI writing: Depth 3–4, low variance (SD < 0.5)
+
+**Normalization (0-1, variance-weighted):**
+```
+Depth_normalized = (mean_depth / 5.0) * (1 - min(depth_variance / 1.5, 1.0))
+Where lower variance pushes score up (more AI-like)
+```
+
+**Signal interpretation:**
+- Variable depth with occasional deep structures (low score) = Human
+- Uniform, moderate depth (high score) = AI (formulaic sentence structure)
+
+---
+
+### 9. REPETITION RATE / SEMANTIC REDUNDANCY (SR)
+**What it measures:** Idea restatement frequency.
+
+**Calculation:**
+```
+Step 1: Sentence embeddings
+- Convert each sentence to embedding (BERT, Sentence-BERT, or transformer)
+- Get d-dimensional vector for each sentence s_i
+
+Step 2: Pairwise similarity
+For consecutive sentence pairs:
+  similarity_i = cosine_similarity(embedding_i, embedding_{i+1})
+  
+  cosine_sim(A, B) = (A · B) / (||A|| * ||B||)
+
+Step 3: Redundancy metric
+Adjacent_redundancy = mean(similarity_1, similarity_2, ..., similarity_{n-1})
+
+Step 4: Block-level redundancy (paragraphs)
+For sentences within same paragraph:
+  Intra_para_redundancy = mean(similarities within paragraph)
+
+Overall_redundancy = (adjacent_redundancy * 0.6) + (intra_para_redundancy * 0.4)
+```
+
+**Implementation steps:**
+1. Sentence segmentation
+2. Generate embeddings (use pre-trained Sentence-Transformer)
+3. Calculate cosine similarity for all adjacent pairs
+4. Calculate within-paragraph similarities
+5. Weighted average
+
+**Thresholds:**
+- Human: Adjacent redundancy 0.40–0.55 (fluctuating)
+- AI: Adjacent redundancy 0.60–0.80 (consistently high)
+
+**Normalization (0-1):**
+```
+SR_normalized = min(Overall_redundancy / 0.75, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- Lower, variable similarity (low score) = sentences develop new ideas = Human
+- High, consistent similarity (high score) = semantic smoothing, rephrasing = AI
+
+---
+
+### 10. INFORMATION DENSITY (ID)
+**What it measures:** Conceptual novelty and specificity per word.
+
+**Calculation:**
+```
+Method 1: Named Entity Density
+- Named_entities = count of NER-detected entities (PERSON, ORG, LOC, etc.)
+- NED = (Named_entities / Total_words) * 1000
+
+Method 2: Content Word Ratio
+- Content_words = nouns, verbs, adjectives, adverbs (POS tags: NOUN, VERB, ADJ, ADV)
+- CWR = Count(content_words) / Total_words
+
+Method 3: Unique Content Words
+- Unique_content = count of unique lemmatized content words
+- UCW_ratio = Unique_content / Total_content_words
+
+Composite Information Density:
+ID = (NED / 50) * 0.3 + CWR * 0.4 + UCW_ratio * 0.3
+```
+
+**Implementation steps:**
+1. NER tagging to extract named entities
+2. POS tagging for content vs. function words
+3. Lemmatize and count unique content lemmas
+4. Normalize each component to 0–1
+5. Weighted average
+
+**Thresholds:**
+- Human: ID 0.50–0.70 (high specificity, lower word count)
+- AI: ID 0.25–0.45 (low specificity, high verbosity)
+
+**Normalization (0-1, inverted):**
+```
+ID_normalized = min(ID / 0.65, 1.0)
+Where higher = more human-like (high information density)
+```
+
+**Signal interpretation:**
+- High ID (low score) = concrete, specific content = Human (efficient)
+- Low ID (high score) = abstract, verbose content = AI (filler words)
+
+---
+
+### 11. REGISTER STABILITY INDEX (RSI)
+**What it measures:** Consistency of tone and formality across document sections.
+
+**Calculation:**
+```
+Divide document into sections (paragraphs or 500-word chunks)
+
+For each section, calculate:
+1. Formality score: F_i
+   - Count contractions: I've, don't, etc. (informal)
+   - Count formal markers: "thus", "hereby", "aforementioned" (formal)
+   - F_i = (formal_count - contraction_count) / section_length
+   - Normalize to [-1, 1] scale
+
+2. Sentiment polarity: S_i
+   - Use VADER or transformer-based sentiment classifier
+   - S_i ∈ [-1, 1] (negative to positive)
+
+3. Syntactic complexity: C_i
+   - Average sentence length in tokens
+   - C_i = mean_tokens / max_tokens (0-1 scale)
+
+4. Lexical diversity: D_i
+   - MATTR within section
+
+Register vector for section i: R_i = [F_i, S_i, C_i, D_i]
+
+Variance across sections:
+Register_variance = variance(R_1, R_2, ..., R_n)
+                  = mean(std_dev(F), std_dev(S), std_dev(C), std_dev(D))
+```
+
+**Implementation steps:**
+1. Divide text into sections (e.g., paragraphs)
+2. For each section: calculate formality, sentiment, complexity, diversity scores
+3. Compute standard deviation across sections for each metric
+4. Average the four standard deviations
+
+**Thresholds:**
+- Human: RSI 0.15–0.35 (high variance across sections, tone shifts)
+- AI: RSI 0.02–0.10 (near-zero variance, machine-like consistency)
+
+**Normalization (0-1, inverted):**
+```
+RSI_normalized = 1 - min(Register_variance / 0.35, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- High variance (low score) = tone/style shifts naturally = Human
+- Near-zero variance (high score) = mechanical consistency = AI
+
+---
+
+### 12. CROSS-MODEL PROBABILITY AGREEMENT (CMPA)
+**What it measures:** Consensus among multiple language models.
+
+**Calculation:**
+```
+Use multiple language models: M_1, M_2, ..., M_k
+(e.g., GPT-2, BERT, RoBERTa, DistilBERT, GPT-3.5)
+
+For each token in text:
+  P_i,j = probability of token_i from model M_j
+  
+Create probability vectors: P_i = [P_i,1, P_i,2, ..., P_i,k]
+
+Token-level agreement (Spearman correlation):
+  rank_i,j = rank of token within top-100 for model M_j
+  Agreement_i = 1 - (Spearman_rank_correlation / 2)
+
+Document-level agreement (average):
+CMPA = mean(Agreement_1, Agreement_2, ..., Agreement_n)
+
+Alternative: Probability distribution similarity (Wasserstein distance)
+CMPA = 1 - mean(Wasserstein(P_i, P_j) for all pairs)
+```
+
+**Implementation steps:**
+1. Pass text through multiple LMs independently
+2. For each token, extract logit probability from each model
+3. Rank tokens by probability within each model
+4. Calculate Spearman rank correlation between models
+5. Average correlation across all tokens and model pairs
+
+**Thresholds:**
+- Human text: CMPA 0.35–0.55 (models disagree)
+- AI text: CMPA 0.65–0.95 (models agree strongly)
+
+**Normalization (0-1):**
+```
+CMPA_normalized = min(CMPA / 0.85, 1.0)
+Where higher = more AI-like
+```
+
+**Signal interpretation:**
+- Low agreement (low score) = models predict differently = Human (unpredictable)
+- High agreement (high score) = models predict similarly = AI (follows training center)
+
+---
+
+## PART 2: NEW 6 METRICS (PROPOSED IMPROVEMENTS)
+
+### 13. ARGUMENT TRAJECTORY COHERENCE (ATC)
+**What it measures:** Logical flow and idea progression maturity.
+
+**Problem addressed:** Current metrics miss whether arguments build authentically or circle back.
+
+**Calculation:**
+```
+Step 1: Argument structure extraction
+- Identify claim sentences (first sentence of paragraphs, rhetorical markers)
+- Identify supporting sentences (evidence, elaboration)
+- Identify transitions/reversals ("However", "But contradicts prior claim)
+
+Step 2: Semantic drift tracking
+For consecutive claims C_i and C_{i+1}:
+  Claim_embedding_i = embed(claim_sentence_i)
+  Semantic_distance_i = cosine_distance(C_i, C_{i+1})
+
+Step 3: Forward momentum
+Forward_momentum = mean semantic distances when transitioning
+(Higher distance = new idea; lower distance = elaboration)
+
+Step 4: Backtracking detection
+Backtrack_i = cosine_similarity(claim_i, any_prior_claim_j where j < i)
+If Backtrack_i > 0.75, flag as idea recurrence
+
+Backtracking_ratio = count(backtracking) / total_claims
+
+Step 5: ATC Score
+ATC = (mean_forward_momentum * 0.5) + (1 - backtracking_ratio) * 0.5
+```
+
+**Implementation steps:**
+1. Paragraph segmentation
+2. Identify first sentence of each paragraph (main claim)
+3. Generate embeddings for each claim
+4. Calculate semantic distance between consecutive claims
+5. Detect circular reasoning by comparing to all prior claims
+6. Compute backtracking ratio
+
+**Thresholds:**
+- Human academic writing: ATC 0.65–0.85 (forward progress with occasional returns)
+- AI-generated text: ATC 0.35–0.55 (either too circular or too repetitive)
+- AI-edited by humans: ATC 0.55–0.70 (mixed signals)
+
+**Normalization (0-1, inverted):**
+```
+ATC_normalized = min((0.85 - ATC) / 0.35, 1.0)
+Where higher = more AI-like (lacks coherent progression)
+```
+
+**Signal interpretation:**
+- High ATC (low score) = ideas build logically forward = Human (mature argumentation)
+- Low ATC (high score) = circular or choppy progression = AI (template-based structure)
+
+---
+
+### 14. SEMANTIC CONSISTENCY ACROSS DISTANCE (SCAD)
+**What it measures:** Global coherence over long spans.
+
+**Problem addressed:** AI sometimes generates locally coherent but globally contradictory text.
+
+**Calculation:**
+```
+Step 1: Divide text into logical blocks
+- If document: chapter-level or section-level
+- If article: paragraph-level
+- Block size: aim for 500–1000 words
+
+Step 2: Extract main semantic content of each block
+- Block_embedding_i = mean embedding of all sentences in block i
+
+Step 3: Calculate distant-pair similarities
+For pairs (block_i, block_j) where |i - j| > threshold (e.g., > 5 blocks apart):
+  Distant_similarity_i,j = cosine_similarity(Block_i, Block_j)
+
+Step 4: Contradiction detection
+- Identify semantic reversals (e.g., earlier: "X is true", later: "X is false")
+- Mark sentences with opposite sentiment or contradictory claims
+- Contradiction_score = count(contradictions) / total_blocks
+
+Step 5: SCAD score
+SCAD = mean(distant_similarities) - (contradiction_score * 0.3)
+```
+
+**Implementation steps:**
+1. Logical block segmentation
+2. Mean sentence embedding per block
+3. Calculate cosine similarity for distant blocks (>5 blocks apart)
+4. NLP-based contradiction detection (compare entity-predicate pairs)
+5. Compute contradiction ratio
+
+**Thresholds:**
+- Coherent human text: SCAD 0.60–0.80 (consistent across distance)
+- AI-generated: SCAD 0.35–0.55 (inconsistency or contradiction)
+- Well-edited AI: SCAD 0.55–0.70
+
+**Normalization (0-1):**
+```
+SCAD_normalized = min((0.80 - SCAD) / 0.40, 1.0)
+Where higher = more AI-like (lower global coherence)
+```
+
+**Signal interpretation:**
+- High SCAD (low score) = internally consistent across distance = Human
+- Low SCAD (high score) = contradictions or semantic drift = AI
+
+---
+
+### 15. UNCERTAINTY & EPISTEMIC HEDGING INDEX (UEHI)
+**What it measures:** Natural expression of doubt and intellectual humility.
+
+**Problem addressed:** AI often expresses false confidence; humans naturally hedge.
+
+**Calculation:**
+```
+Define hedging lexicons:
+
+Epistemic markers = {"perhaps", "arguably", "I think", "it seems", "might",
+                     "could be", "one could argue", "arguably", "in my view",
+                     "suggests", "appears to", "tends to", "may", "I believe"}
+
+Confidence markers = {"certainly", "definitely", "absolutely", "must be",
+                      "is clear that", "obviously", "undoubtedly"}
+
+Uncertainty quantifiers = {"some", "several", "a few", "most", "many"}
+
+Qualification markers = {"but", "however", "although", "while", "yet", "still"}
+
+Count each category:
+- Epistemic_count = occurrences of epistemic hedges
+- Confidence_count = occurrences of certainty claims
+- Qualifier_count = occurrences of qualifications
+
+Hedging frequency (per 1000 words):
+HF = (Epistemic_count / total_words) * 1000
+
+Confidence overreach = Confidence_count - Epistemic_count
+(If confidence > epistemic, flag as potentially overconfident)
+
+UEHI = (Epistemic_count * 0.5 + Qualifier_count * 0.3 + 
+        min(confidence_count, epistemic_count) * 0.2) / total_words
+```
+
+**Implementation steps:**
+1. Create comprehensive epistemic and hedging lexicon
+2. Count occurrences of each category
+3. Calculate per-1000-word rates
+4. Calculate confidence-to-hedging ratio
+5. Weight epistemic markers most heavily
+
+**Thresholds:**
+- Human academic writing: UEHI 0.08–0.15 (frequent hedging)
+- AI writing: UEHI 0.02–0.08 (sparse hedging, overconfident)
+- Mixed: UEHI 0.06–0.10
+
+**Normalization (0-1, inverted):**
+```
+UEHI_normalized = min((0.15 - UEHI) / 0.12, 1.0)
+Where higher = more AI-like (overconfident, under-hedged)
+```
+
+**Signal interpretation:**
+- High UEHI (low score) = frequent hedging, intellectual humility = Human
+- Low UEHI (high score) = overconfidence, minimal hedging = AI
+
+---
+
+### 16. AUTHORIAL VOICE CONSISTENCY (AVC) - Stylometric Fingerprinting
+**What it measures:** Unique linguistic fingerprint within a single document.
+
+**Problem addressed:** Detects when multiple authors or AI-assisted composition.
+
+**Calculation:**
+```
+Step 1: Divide text into equal-length chunks (1000 words each)
+Chunks: C_1, C_2, ..., C_n
+
+Step 2: Extract stylometric features for each chunk
+For each chunk, calculate:
+- Avg sentence length: S_i
+- Type-Token Ratio: T_i
+- Function word ratio: F_i
+- Unique bigrams (2-word phrases): B_i
+- Most common punctuation: P_i
+- Stylistic POS trigrams (e.g., ADJ-NOUN-VERB): G_i
+
+Stylometric signature: V_i = [S_i, T_i, F_i, B_i, P_i, G_i]
+
+Step 3: Within-document consistency
+Consistency_pairs = all pairwise Euclidean distances between signatures
+  Distance_i,j = sqrt(Σ(V_i[k] - V_j[k])²)
+
+AVC = 1 - mean(Distance_i,j)
+(Normalized so close signatures = high consistency)
+
+Step 4: Detect authorial shifts
+Flag chunks with distance > 2 standard deviations from mean
+Shift_count = chunks with outlier signatures
+Shift_percentage = Shift_count / n
+```
+
+**Implementation steps:**
+1. Fixed-length chunk division (1000-word windows)
+2. Feature extraction per chunk (sentence length, TTR, FWR, bigrams, punctuation, POS trigrams)
+3. Standardize all features to z-scores (mean 0, SD 1)
+4. Euclidean distance between all chunk pairs
+5. Identify outlier chunks (>2 SD from mean distance)
+
+**Thresholds:**
+- Single-authored human text: AVC 0.75–0.90 (high consistency)
+- AI-generated text: AVC 0.70–0.85 (some consistency, but mechanical)
+- Mixed (human + AI): AVC 0.50–0.70 (visible shifts, seams between sections)
+- Multiple human authors: AVC 0.40–0.60 (large style differences)
+
+**Normalization (0-1):**
+```
+If AVC < 0.60 with >15% shift chunks:
+  AVC_flag = "Mixed authorship detected"
+  AVC_normalized = 0.8 (high anomaly score)
+Else:
+  AVC_normalized = 1 - AVC
+  (Higher = more AI-like or composite)
+```
+
+**Signal interpretation:**
+- High AVC, no shifts (low score) = consistent single author = likely Human
+- Lower AVC with visible chunks (high score) = style switching = AI or mixed
+- Moderate AVC, uniform-ish (high-med score) = mechanical consistency = AI
+
+---
+
+### 17. PRAGMATIC COHERENCE & GOAL ACHIEVEMENT (PCGA)
+**What it measures:** Whether text actually accomplishes its stated purpose.
+
+**Problem addressed:** AI can be fluent but incoherent pragmatically (instructional text that doesn't work, persuasion that fails, etc.).
+
+**Calculation:**
+```
+Step 1: Detect document genre/intent
+- Use text classification or rule-based detection
+- Genres: persuasive, instructional, narrative, expository, descriptive
+
+Step 2: Extract goal statements
+- First paragraph often contains goal ("This paper argues...", "We will show...", "This guide teaches...")
+- Use NLP to find intent markers
+
+Step 3: Goal fulfillment verification
+Based on genre:
+
+IF Persuasive essay:
+  - Identify thesis statement
+  - Identify supporting arguments (should >3)
+  - Calculate premise-to-conclusion coherence
+  - Measure logical flow (does evidence support claim?)
+  - Goal_achievement = min(argument_count / 4, 1.0) * coherence_score
+
+IF Instructional text:
+  - Extract steps/procedures
+  - Verify steps are actionable (contain verbs, objects)
+  - Check completeness (first-to-last step forms complete process)
+  - Verify user can execute independently
+  - Goal_achievement = (actionable_steps / total_steps) * completeness_score
+
+IF Narrative:
+  - Verify plot coherence (exposition → conflict → climax → resolution)
+  - Check character consistency
+  - Verify causal chain of events
+  - Goal_achievement = plot_coherence_score
+
+IF Expository:
+  - Verify coverage of all subtopics introduced
+  - Check depth adequacy for claimed scope
+  - Verify logical organization
+  - Goal_achievement = (covered_topics / introduced_topics)
+
+Step 4: Pragmatic Coherence Score
+PCGA = (goal_achievement + coherence_check) / 2
+```
+
+**Implementation steps:**
+1. Document classification (genre detection via text patterns)
+2. Goal/thesis extraction (usually first paragraph)
+3. Structure verification (genre-specific checks)
+4. Coherence scoring via NLP
+
+**Thresholds:**
+- Well-written human text: PCGA 0.70–0.95 (accomplishes its goal effectively)
+- AI-generated text: PCGA 0.40–0.70 (often fluent but misses goal)
+- Poorly executed human text: PCGA 0.30–0.60 (fails goal despite effort)
+
+**Normalization (0-1, inverted):**
+```
+PCGA_normalized = min((0.75 - PCGA) / 0.40, 1.0)
+Where higher = more AI-like (fails pragmatic goals)
+```
+
+**Signal interpretation:**
+- High PCGA (low score) = accomplishes purpose well = Human-authored
+- Low PCGA (high score) = fluent but misses goal = AI-generated
+
+---
+
+### 18. TEMPORAL-CONTEXTUAL ANACHRONISM DETECTION (TCAD)
+**What it measures:** Appropriateness of vocabulary and references to document's temporal context.
+
+**Problem addressed:** AI sometimes leaks training-data temporal patterns.
+
+**Calculation:**
+```
+Step 1: Infer document's claimed temporal context
+- If stated (e.g., "in 1920s"), extract it
+- If implied (e.g., references to recent events), infer it
+- Use date mentions, technology references, historical context
+
+Document_temporal_context = inferred time period (or current if unspecified)
+
+Step 2: Vocabulary anachronism check
+- Load historical word frequency data (Google Ngrams, historical corpora)
+- For rare/specialized words, check: were they in use in claimed period?
+- Modern slang in claimed past = anachronism
+- Obsolete words in claimed present = anachronism
+
+For each content word:
+  Usage_period = historical period when word became common
+  If |Usage_period - Document_context| > 20 years:
+    Flag as anachronism
+
+Anachronism_count = words flagged
+Anachronism_ratio = Anachronism_count / total_content_words
+
+Step 3: Reference consistency check
+- Extract all historical/factual references
+- Verify against knowledge base (Wikipedia, historical databases)
+- Reference_accuracy = accurate_refs / total_refs
+
+Step 4: TCAD Score
+TCAD = (1 - Anachronism_ratio) * 0.6 + Reference_accuracy * 0.4
+```
+
+**Implementation steps:**
+1. Temporal context detection (date mentions, event references)
+2. Cross-reference with historical word-usage data
+3. Flagging anachronistic vocabulary
+4. Fact-checking references (can use knowledge base)
+5. Compute combined score
+
+**Thresholds:**
+- Historically appropriate human text: TCAD 0.80–0.98
+- AI text (anachronism-prone): TCAD 0.60–0.80 (mixes temporal eras)
+- AI-generated fiction: TCAD 0.50–0.75 (often contradictory timelines)
+
+**Normalization (0-1, inverted):**
+```
+TCAD_normalized = min((0.85 - TCAD) / 0.25, 1.0)
+Where higher = more AI-like (temporal inconsistency)
+```
+
+**Signal interpretation:**
+- High TCAD (low score) = historically consistent language = Human
+- Low TCAD (high score) = temporal inconsistencies, anachronisms = AI
+
+---
+
+## PART 3: UNIFIED SCORING FRAMEWORK
+
+### Integration & Weighting Logic
+
+**Step 1: Normalize all 18 metrics to [0, 1] scale**
+```
+All metrics output values 0–1, where:
+- 0 = human-like
+- 1 = AI-like
+
+Metrics already normalized: see individual definitions above
+```
+
+**Step 2: Calculate component scores**
+
+```
+LINGUISTIC COMPONENT (Metrics 1–7):
+- Perplexity (weight: 0.15)
+- Burstiness (weight: 0.10)
+- TTR (weight: 0.08)
+- MATTR (weight: 0.12)
+- LSI (weight: 0.10)
+- FWR (weight: 0.10)
+- DMD (weight: 0.10)
+- Discounted_Linguistic = Σ(metric_i * weight_i)
+
+SYNTACTIC & SEMANTIC COMPONENT (Metrics 8–12):
+- STD (weight: 0.12)
+- Repetition Rate (weight: 0.15)
+- Information Density (weight: 0.15)
+- Register Stability (weight: 0.10)
+- CMPA (weight: 0.12)
+- Discounted_Syntactic = Σ(metric_i * weight_i)
+
+COHERENCE & AUTHENTICITY COMPONENT (Metrics 13–18):
+- ATC (weight: 0.15)
+- SCAD (weight: 0.15)
+- UEHI (weight: 0.12)
+- AVC (weight: 0.15)
+- PCGA (weight: 0.15)
+- TCAD (weight: 0.12)
+- Discounted_Coherence = Σ(metric_i * weight_i)
+```
+
+**Step 3: Calculate weighted ensemble score**
+
+```
+ENSEMBLE_SCORE = (Linguistic_score * 0.35) + 
+                 (Syntactic_score * 0.35) + 
+                 (Coherence_score * 0.30)
+
+Final_AI_likelihood = ENSEMBLE_SCORE
+
+Where:
+- 0.0–0.30 = Likely Human (>70% confidence)
+- 0.30–0.50 = Mixed / Edited AI / Uncertain (50-50)
+- 0.50–0.70 = Likely AI (50-70% confidence)
+- 0.70–1.00 = Very Likely AI (>70% confidence)
+```
+
+**Step 4: Confidence adjustment**
+
+```
+Base_confidence = 50 + (|ENSEMBLE_SCORE - 0.5| * 100)
+
+Confidence_modifiers:
+- If metrics cluster tightly (low variance): +15% confidence
+- If metrics conflict (high variance): -10% confidence
+- If document <500 words: -20% confidence (too small sample)
+- If document >50,000 words: -5% confidence (metrics dilute at extreme length)
+
+Adjusted_confidence = min(max(Base_confidence - adjustments, 20), 95)
+```
+
+**Step 5: Final output format**
+
+```
+{
+  "overall_ai_likelihood": 0.67,  // 0.0–1.0
+  "confidence_percentage": 78,     // 20–95%
+  "classification": "Likely AI",  // categorical label
+  
+  "component_scores": {
+    "linguistic": 0.62,
+    "syntactic_semantic": 0.70,
+    "coherence_authenticity": 0.68
+  },
+  
+  "detailed_metrics": {
+    "perplexity_normalized": 0.75,
+    "burstiness_normalized": 0.55,
+    "mattr_normalized": 0.60,
+    "uehi_normalized": 0.72,
+    "atc_normalized": 0.65,
+    // ... all 18 metrics
+  },
+  
+  "red_flags": [
+    "Low uncertainty hedging (UEHI: 0.72)",
+    "High discourse marker density (DMD: 25 per 1000 words)",
+    "Consistent register (RSI: 0.05)"
+  ],
+  
+  "green_flags": [
+    "High information density (ID: 0.58)",
+    "Good argument trajectory (ATC: 0.72)",
+    "Temporal consistency (TCAD: 0.88)"
+  ],
+  
+  "notes": "Text shows strong AI indicators in syntactic-semantic domain but reasonable coherence. Likely AI-generated with possible light human editing."
+}
+```
+
+---
+
+## PART 4: EXAMPLE CALCULATION WALKTHROUGH
+
+### Sample Document (500 words, mixed academic/persuasive)
+
+**Text snippet:**
+> "Artificial intelligence has become increasingly prevalent in modern society. The technology is used in numerous applications, including healthcare, finance, and education. Moreover, AI systems have demonstrated remarkable capabilities in various domains. However, some concerns about AI safety remain. Furthermore, the implications of AI adoption are profound. In conclusion, AI will continue to shape our future..."
+
+---
+
+### Metric 1: Perplexity (PPL)
+```
+Model: GPT-2
+Running text through model:
+"Artificial" → P = 0.05
+"intelligence" → P = 0.08
+"has" → P = 0.12
+...
+Average log probability: -2.85
+PPL = exp(2.85) = 17.3
+
+PPL_normalized = 1 / (1 + 17.3/100) = 0.85
+→ HIGH AI SIGNAL (perplexity 17.3 is in AI range 5–20)
+```
+
+### Metric 2: Burstiness
+```
+Sentence lengths (tokens):
+[8, 12, 15, 9, 14, 11, 10]
+
+Mean: 11.3 tokens
+Variance: σ² = 6.3
+SD: σ = 2.5
+CV = 2.5 / 11.3 = 0.22
+
+Burstiness_normalized = 1 - min(0.22 / 0.50, 1.0) = 0.56
+→ MODERATE AI SIGNAL (low variance suggests mechanical rhythm)
+```
+
+### Metric 4: MATTR
+```
+Three 100-word windows:
+Window 1: TTR = 0.42
+Window 2: TTR = 0.39
+Window 3: TTR = 0.41
+
+MATTR = (0.42 + 0.39 + 0.41) / 3 = 0.407
+
+MATTR_normalized = min(0.407 / 0.70, 1.0) = 0.58
+→ MODERATE-HIGH AI SIGNAL (vocabulary repetition in sample)
+```
+
+### Metric 7: Discourse Marker Density
+```
+Markers found: "Moreover" (1x), "Furthermore" (1x), "In conclusion" (1x)
+Total: 3 markers
+Word count: 500
+
+DMD = (3 / 500) * 1000 = 6.0 per 1000 words
+
+DMD_normalized = min(6.0 / 30, 1.0) = 0.20
+→ LOW AI SIGNAL (within human range 5–15)
+```
+
+### Metric 13: Argument Trajectory Coherence
+```
+Claims (first sentence of each paragraph):
+C1: "AI has become prevalent"
+C2: "Technology is used in applications"
+C3: "AI systems have capabilities"
+C4: "Some concerns remain"
+C5: "Implications are profound"
+C6: "AI will shape future"
+
+Semantic distances (consecutive): [0.15, 0.18, 0.25, 0.20, 0.22]
+Mean forward momentum: 0.20
+
+Backtracking: C5 ("implications") somewhat repeats C2 ("applications")
+Backtracking ratio: 1/5 = 0.20
+
+ATC = (0.20 * 0.5) + (1 - 0.20) * 0.5 = 0.50
+
+ATC_normalized = min((0.85 - 0.50) / 0.35, 1.0) = 1.0
+→ HIGH AI SIGNAL (weak argument trajectory, circular ideas)
+```
+
+### Metric 15: Uncertainty & Epistemic Hedging
+```
+Epistemic markers: None found
+Confidence markers: "remarkable capabilities" (1x)
+Qualifications: "However" (1x), but no epistemic hedging
+
+UEHI = (0 * 0.5 + 1 * 0.3 + 1 * 0.2) / 500 = 0.001
+
+UEHI_normalized = min((0.15 - 0.001) / 0.12, 1.0) = 1.0
+→ VERY HIGH AI SIGNAL (zero hedging, overconfident)
+```
+
+---
+
+### Composite Scoring
+
+```
+LINGUISTIC COMPONENT:
+- Perplexity: 0.85 (weight 0.15) = 0.1275
+- Burstiness: 0.56 (weight 0.10) = 0.056
+- TTR: 0.48 (weight 0.08) = 0.0384
+- MATTR: 0.58 (weight 0.12) = 0.0696
+- LSI: 0.65 (weight 0.10) = 0.065
+- FWR: 0.52 (weight 0.10) = 0.052
+- DMD: 0.20 (weight 0.10) = 0.020
+Linguistic_score = 0.419
+
+SYNTACTIC COMPONENT:
+- STD: 0.48 (weight 0.12) = 0.0576
+- Repetition: 0.62 (weight 0.15) = 0.093
+- Info Density: 0.55 (weight 0.15) = 0.0825
+- Register Stability: 0.45 (weight 0.10) = 0.045
+- CMPA: 0.72 (weight 0.12) = 0.0864
+Syntactic_score = 0.364
+
+COHERENCE COMPONENT:
+- ATC: 1.0 (weight 0.15) = 0.15
+- SCAD: 0.68 (weight 0.15) = 0.102
+- UEHI: 1.0 (weight 0.12) = 0.12
+- AVC: 0.62 (weight 0.15) = 0.093
+- PCGA: 0.50 (weight 0.15) = 0.075
+- TCAD: 0.58 (weight 0.12) = 0.0696
+Coherence_score = 0.576
+
+ENSEMBLE_SCORE = (0.419 * 0.35) + (0.364 * 0.35) + (0.576 * 0.30)
+                = 0.1467 + 0.1274 + 0.1728
+                = 0.447
+```
+
+---
+
+### Final Output for Sample
+
+```
+{
+  "overall_ai_likelihood": 0.447,
+  "confidence_percentage": 72,
+  "classification": "Mixed / Uncertain - Likely Human with AI assistance",
+  
+  "component_scores": {
+    "linguistic": 0.419,
+    "syntactic_semantic": 0.364,
+    "coherence_authenticity": 0.576
+  },
+  
+  "detailed_metrics": {
+    "perplexity": 0.85,
+    "burstiness": 0.56,
+    "mattr": 0.58,
+    "uehi": 1.0,
+    "atc": 1.0,
+    "scad": 0.68,
+    // ...
+  },
+  
+  "red_flags": [
+    "Zero epistemic hedging - text is overconfident (UEHI: 1.0)",
+    "Weak argument progression - ideas circle (ATC: 1.0)",
+    "High perplexity agreement with GPT-family models (PPL: 0.85)",
+    "Register uniformity suggests non-human consistency (RSI: 0.45)"
+  ],
+  
+  "green_flags": [
+    "Sparse discourse markers (DMD: 6.0) suggests natural writing",
+    "Some semantic redundancy variation (SCAD: 0.68) indicates thinking",
+    "Authorial voice present (AVC: 0.62)"
+  ],
+  
+  "interpretation": "This text shows hallmarks of AI-assisted composition: heavy reliance on discourse templates, lack of intellectual humility, and mechanical argument structure. However, coherence and stylistic consistency suggest either human revision or integration of human ideas. Likely scenario: AI draft with light human editing, or human outline with AI expansion."
+}
+```
+
+---
+
+## PART 5: BEST PRACTICES & CAVEATS
+
+### When to Trust These Metrics
+
+1. **Document length >1000 words:** Metrics stabilize; shorter texts have high noise
+2. **Single clear domain:** Academic writing, technical docs, essays (consistent baselines)
+3. **Recent LLMs:** Metrics trained on GPT-3.5, Claude, etc.—may not work for older/unknown models
+4. **Ensemble approach:** Always use weighted combination; single metrics are unreliable
+
+### When to Be Skeptical
+
+1. **Document <500 words:** Apply -20% confidence; too little signal
+2. **Highly edited AI:** Light human touching can move scores toward "human" range
+3. **Domain-specialized texts:** Medical abstracts, code, poetry have different baselines
+4. **Multilingual text:** Most metrics assume English; may misfire on translation artifacts
+5. **Mixed authorship:** Intentional collaboration can produce conflicting signals
+
+### Adaptive Baselines
+
+Different text types have different "normal" ranges:
+
+```
+Academic paper: higher TTR (0.50–0.70), moderate discourse (8–12), 
+                low burstiness (8–10 word SD)
+
+Social media post: low TTR (0.30–0.45), high discourse (20–35),
+                  extremely variable sentence length
+
+Technical manual: very low TTR (0.20–0.35), high function words (60–70%),
+                 moderate sentence length, high information density
+
+Fiction/narrative: moderate TTR (0.45–0.65), sparse discourse (3–8),
+                  high burstiness, variable register
+```
+
+Always adjust thresholds based on document type.
+
+---
+
+## PART 6: PSEUDOCODE IMPLEMENTATION
+
+```python
+class AIDetectionFramework:
+    def __init__(self, text, model_dict=None):
+        self.text = text
+        self.tokens = tokenize(text)
+        self.sentences = sent_tokenize(text)
+        self.paragraphs = para_tokenize(text)
+        self.models = model_dict or load_default_models()
+        
+    def calculate_all_metrics(self):
+        metrics = {}
+        
+        # Linguistic metrics
+        metrics['perplexity'] = self.perplexity()
+        metrics['burstiness'] = self.burstiness()
+        metrics['ttr'] = self.type_token_ratio()
+        metrics['mattr'] = self.moving_avg_ttr()
+        metrics['lsi'] = self.lexical_sophistication()
+        metrics['fwr'] = self.function_word_ratio()
+        metrics['dmd'] = self.discourse_marker_density()
+        
+        # Syntactic metrics
+        metrics['std'] = self.syntactic_tree_depth()
+        metrics['repetition'] = self.repetition_rate()
+        metrics['info_density'] = self.information_density()
+        metrics['register'] = self.register_stability()
+        metrics['cmpa'] = self.cross_model_probability()
+        
+        # Coherence metrics
+        metrics['atc'] = self.argument_trajectory()
+        metrics['scad'] = self.semantic_consistency()
+        metrics['uehi'] = self.uncertainty_hedging()
+        metrics['avc'] = self.authorial_voice()
+        metrics['pcga'] = self.pragmatic_coherence()
+        metrics['tcad'] = self.temporal_anachronism()
+        
+        return metrics
+    
+    def ensemble_score(self, metrics):
+        # Normalize each metric to [0, 1]
+        normalized = {k: self.normalize_metric(k, v) 
+                     for k, v in metrics.items()}
+        
+        # Weight by component
+        linguistic = self.weighted_sum(
+            ['perplexity', 'burstiness', 'ttr', 'mattr', 'lsi', 'fwr', 'dmd'],
+            normalized
+        ) * 0.35
+        
+        syntactic = self.weighted_sum(
+            ['std', 'repetition', 'info_density', 'register', 'cmpa'],
+            normalized
+        ) * 0.35
+        
+        coherence = self.weighted_sum(
+            ['atc', 'scad', 'uehi', 'avc', 'pcga', 'tcad'],
+            normalized
+        ) * 0.30
+        
+        ai_likelihood = linguistic + syntactic + coherence
+        confidence = self.compute_confidence(normalized, ai_likelihood)
+        
+        return {
+            'ai_likelihood': ai_likelihood,
+            'confidence': confidence,
+            'component_scores': {
+                'linguistic': linguistic / 0.35,
+                'syntactic': syntactic / 0.35,
+                'coherence': coherence / 0.30
+            },
+            'classification': self.classify(ai_likelihood, confidence)
+        }
+    
+    def classify(self, score, confidence):
+        if score < 0.30:
+            return f"Likely Human ({confidence}% confidence)"
+        elif score < 0.50:
+            return f"Mixed / Uncertain ({confidence}% confidence)"
+        elif score < 0.70:
+            return f"Likely AI ({confidence}% confidence)"
+        else:
+            return f"Very Likely AI ({confidence}% confidence)"
+```
+
+---
+
+## Summary
+
+This integrated framework combines:
+- **Original 12 metrics** (linguistic, syntactic, discourse-level)
+- **New 6 metrics** (argumentation, semantic coherence, hedging, authorial consistency, pragmatism, temporal logic)
+- **Unified weighting** (35% linguistic, 35% syntactic, 30% coherence)
+- **Confidence adjustment** (accounting for document length, metric variance, data quality)
+
+The approach is **more robust** than single-metric detection because it:
+1. Captures multiple dimensions of text (structure, semantics, pragmatics)
+2. Reduces false positives from over-reliance on any one signal
+3. Accounts for human editing and AI-assisted writing
+4. Provides diagnostic flags (what specifically suggests AI?)
+5. Degrades gracefully with document length and domain shifts
+
+---
+
+**Note:** This framework is research-level. Production use requires extensive validation on diverse corpora and iterative threshold tuning per domain.
