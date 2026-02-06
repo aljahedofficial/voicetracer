@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 from models import DocumentPair, AnalysisResult, MetricScores, MetricDeltas, Session
 from metric_calculator import MetricCalculationEngine, MetricComparisonEngine, AIismCalculator
 from text_processor import TextProcessor
-from visualizations import RadarChartGenerator, BarChartGenerator, TextDiffVisualizer, DeltaVisualization, BurstinessVisualization
+from visualizations import RadarChartGenerator, BarChartGenerator, TextDiffVisualizer, DeltaVisualization, BurstinessVisualization, IndividualMetricCharts
 from exporters import ExportFactory, ExportMetadata
 import difflib
 
@@ -25,6 +25,17 @@ import difflib
 # ============================================================================
 # FILE EXTRACTION FUNCTIONS
 # ============================================================================
+def _safe_metric(metrics: dict, raw_key: str, fallback_key: str = None, default: float = 0.0) -> float:
+    """Return a metric value with a safe fallback for older metric payloads."""
+    if not isinstance(metrics, dict):
+        return default
+    if raw_key in metrics:
+        return metrics[raw_key]
+    if fallback_key and fallback_key in metrics:
+        return metrics[fallback_key]
+    return default
+
+
 def extract_text_from_txt(file) -> str:
     """Extract text from TXT file."""
     return file.read().decode('utf-8')
@@ -101,6 +112,7 @@ def setup_sidebar():
     """Setup sidebar navigation and settings."""
     with st.sidebar:
         st.markdown("## 🎙️ VoiceTracer")
+        st.caption("Build: 2026-02-06-1")
         st.markdown("---")
         
         st.markdown("### About")
@@ -274,25 +286,25 @@ def render_step_1_input():
                 
                 # Create result
                 metric_scores_orig = MetricScores(
-                    burstiness=orig_metrics['burstiness_raw'],
-                    lexical_diversity=orig_metrics['lexical_diversity_raw'],
-                    syntactic_complexity=orig_metrics['syntactic_complexity_raw'],
-                    ai_ism_likelihood=orig_metrics['ai_ism_likelihood_raw'],
-                    function_word_ratio=orig_metrics['function_word_ratio_raw'],
-                    discourse_marker_density=orig_metrics['discourse_marker_density_raw'],
-                    information_density=orig_metrics['information_density_raw'],
-                    epistemic_hedging=orig_metrics['epistemic_hedging_raw'],
+                    burstiness=_safe_metric(orig_metrics, 'burstiness_raw', 'burstiness'),
+                    lexical_diversity=_safe_metric(orig_metrics, 'lexical_diversity_raw', 'lexical_diversity'),
+                    syntactic_complexity=_safe_metric(orig_metrics, 'syntactic_complexity_raw', 'syntactic_complexity'),
+                    ai_ism_likelihood=_safe_metric(orig_metrics, 'ai_ism_likelihood_raw', 'ai_ism_likelihood'),
+                    function_word_ratio=_safe_metric(orig_metrics, 'function_word_ratio_raw', 'function_word_ratio'),
+                    discourse_marker_density=_safe_metric(orig_metrics, 'discourse_marker_density_raw', 'discourse_marker_density'),
+                    information_density=_safe_metric(orig_metrics, 'information_density_raw', 'information_density'),
+                    epistemic_hedging=_safe_metric(orig_metrics, 'epistemic_hedging_raw', 'epistemic_hedging'),
                 )
                 
                 metric_scores_edit = MetricScores(
-                    burstiness=edit_metrics['burstiness_raw'],
-                    lexical_diversity=edit_metrics['lexical_diversity_raw'],
-                    syntactic_complexity=edit_metrics['syntactic_complexity_raw'],
-                    ai_ism_likelihood=edit_metrics['ai_ism_likelihood_raw'],
-                    function_word_ratio=edit_metrics['function_word_ratio_raw'],
-                    discourse_marker_density=edit_metrics['discourse_marker_density_raw'],
-                    information_density=edit_metrics['information_density_raw'],
-                    epistemic_hedging=edit_metrics['epistemic_hedging_raw'],
+                    burstiness=_safe_metric(edit_metrics, 'burstiness_raw', 'burstiness'),
+                    lexical_diversity=_safe_metric(edit_metrics, 'lexical_diversity_raw', 'lexical_diversity'),
+                    syntactic_complexity=_safe_metric(edit_metrics, 'syntactic_complexity_raw', 'syntactic_complexity'),
+                    ai_ism_likelihood=_safe_metric(edit_metrics, 'ai_ism_likelihood_raw', 'ai_ism_likelihood'),
+                    function_word_ratio=_safe_metric(edit_metrics, 'function_word_ratio_raw', 'function_word_ratio'),
+                    discourse_marker_density=_safe_metric(edit_metrics, 'discourse_marker_density_raw', 'discourse_marker_density'),
+                    information_density=_safe_metric(edit_metrics, 'information_density_raw', 'information_density'),
+                    epistemic_hedging=_safe_metric(edit_metrics, 'epistemic_hedging_raw', 'epistemic_hedging'),
                 )
                 
                 deltas = MetricComparisonEngine.calculate_deltas(orig_metrics, edit_metrics)
@@ -697,9 +709,10 @@ def render_step_3_visualize():
     st.markdown("### Choose Your Visualization")
     viz_type = st.radio(
         "Select visualization:",
-        options=["radar", "burstiness", "bars", "deltas", "diff"],
+        options=["radar", "individual", "burstiness", "bars", "deltas", "diff"],
         format_func=lambda x: {
             "radar": "🎯 8-Axis Radar (Original vs Edited)",
+            "individual": "📌 Individual Metric Charts",
             "burstiness": "📊 Syntactic Burstiness",
             "bars": "📊 Bar Chart Comparison",
             "deltas": "📈 Metric Changes",
@@ -734,6 +747,17 @@ def render_step_3_visualize():
                 "**Overlap** = Preserved voice  \n"
                 "**Divergence** = Loss of voice authenticity"
             )
+
+        elif viz_type == "individual":
+            st.markdown("### Individual Metric Charts")
+            st.markdown("*Each metric shown as its own comparison chart*")
+
+            panels = IndividualMetricCharts.create_metric_panels(bar_orig_metrics, bar_edited_metrics)
+            for idx in range(0, len(panels), 2):
+                cols = st.columns(2)
+                for col, (_, fig) in zip(cols, panels[idx:idx + 2]):
+                    with col:
+                        st.plotly_chart(fig, use_container_width=True)
         
         elif viz_type == "burstiness":
             st.markdown("### Syntactic Burstiness")

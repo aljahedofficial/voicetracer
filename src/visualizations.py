@@ -160,6 +160,60 @@ class BarChartGenerator:
         return fig
 
 
+class IndividualMetricCharts:
+    """Generates individual metric comparison charts."""
+
+    @staticmethod
+    def create_metric_panels(
+        original_metrics: Dict[str, float],
+        edited_metrics: Dict[str, float]
+    ) -> List[Tuple[str, go.Figure]]:
+        """Create one chart per metric for side-by-side comparison."""
+        metrics = [
+            ('Burstiness', 'burstiness_raw', 3.0),
+            ('Lexical Diversity', 'lexical_diversity_raw', 1.0),
+            ('Syntactic Complexity', 'syntactic_complexity_raw', 1.0),
+            ('AI-ism Likelihood', 'ai_ism_likelihood_raw', 100.0),
+            ('Function Word Ratio', 'function_word_ratio_raw', 1.0),
+            ('Discourse Marker Density', 'discourse_marker_density_raw', 30.0),
+            ('Information Density', 'information_density_raw', 1.0),
+            ('Epistemic Hedging', 'epistemic_hedging_raw', 0.15),
+        ]
+
+        panels = []
+        for name, key, max_val in metrics:
+            orig_val = original_metrics.get(key, 0)
+            edit_val = edited_metrics.get(key, 0)
+
+            fig = go.Figure(data=[
+                go.Bar(
+                    name='Original',
+                    x=['Original'],
+                    y=[orig_val],
+                    marker_color='#2ca02c',
+                ),
+                go.Bar(
+                    name='Edited',
+                    x=['Edited'],
+                    y=[edit_val],
+                    marker_color='#d62728',
+                )
+            ])
+
+            fig.update_layout(
+                title=name,
+                barmode='group',
+                height=260,
+                margin=dict(l=20, r=20, t=50, b=20),
+                showlegend=False,
+                yaxis=dict(range=[0, max_val], title='Value'),
+            )
+
+            panels.append((name, fig))
+
+        return panels
+
+
 class DeltaVisualization:
     """Generates visualizations of metric changes."""
     
