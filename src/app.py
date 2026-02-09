@@ -555,24 +555,10 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
             """)
                         st.markdown("""
                         **Developer:**  
-                        Minhaj Al Jahed
-
-                        <div style="max-width: 260px; border: 1px solid #e1e5e9; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-family: Arial, sans-serif;">
-                            <div style="background: #f3f2ef; padding: 8px 12px; font-weight: 700; color: #0a66c2; letter-spacing: 0.3px;">LinkedIn</div>
-                            <div style="padding: 12px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 44px; height: 44px; border-radius: 50%; background: #d9dde1; display: flex; align-items: center; justify-content: center; color: #6b7785; font-weight: 700;">MJ</div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #111;">Minhaj Al Jahed</div>
-                                        <div style="font-size: 12px; color: #6b7785;">--</div>
-                                    </div>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <a href="https://bd.linkedin.com/in/minhaj-al-jahed-37a0443b0?trk=profile-badge" style="display: inline-block; padding: 6px 12px; border: 1px solid #0a66c2; color: #0a66c2; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 12px;">View profile</a>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        Architect & Prompt Engineer: Minhaj Al Jahed  
+                        AI Engineering Support: GitHub Copilot Pro  
+                        Autocompletion & Debugging: GitHub Codespaces
+                        """)
         
         st.markdown("---")
         st.caption("Made for thesis research on stylistic homogenization in L2 writing")
