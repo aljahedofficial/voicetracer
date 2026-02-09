@@ -388,12 +388,34 @@ st.markdown("""
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Sidebar collapse button label */
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"] {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    button[data-testid="stSidebarCollapseButton"],
+    button[data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarCollapseButton"] button,
+    [data-testid="stSidebarCollapsedControl"] button {
+        width: auto;
+        min-width: 3.2rem;
+        padding-right: 0.6rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        overflow: visible;
+    }
+
     button[data-testid="stSidebarCollapseButton"]::after,
-    button[data-testid="stSidebarCollapsedControl"]::after {
-        content: " Menu";
+    button[data-testid="stSidebarCollapsedControl"]::after,
+    [data-testid="stSidebarCollapseButton"] button::after,
+    [data-testid="stSidebarCollapsedControl"] button::after {
+        content: "Menu";
         font-size: 0.85rem;
         font-weight: 600;
-        margin-left: 0.35rem;
+        letter-spacing: 0.02em;
     }
 </style>
 """, unsafe_allow_html=True)
