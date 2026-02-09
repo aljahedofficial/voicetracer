@@ -174,7 +174,17 @@ def _raw_metric_dict(metric_scores) -> Dict[str, float]:
 
 
 def _plotly_to_image(fig, width: int = 1200, height: int = 800, scale: int = 2) -> bytes:
-    return pio.to_image(fig, format="png", width=width, height=height, scale=scale)
+    try:
+        return pio.to_image(
+            fig,
+            format="png",
+            width=width,
+            height=height,
+            scale=scale,
+            engine="kaleido",
+        )
+    except Exception:
+        return fig.to_image(format="png", width=width, height=height, scale=scale)
 
 
 class CSVExporter:
