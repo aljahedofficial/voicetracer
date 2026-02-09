@@ -548,15 +548,21 @@ def render_step_1_input():
         )
         st.rerun()
 
-    st.markdown("### Manual Calibration")
-    st.caption("Adjust standards before analysis. Changes update calibrated results in later steps.")
-    render_calibration_panel("step1_calibration", expanded=True)
-    render_standard_legend_table(
-        "What is currently set by the user for Human vs AI Standard Values"
-    )
-    render_global_standard_table(
-        "What actually is set globally (default values)"
-    )
+    render_calibration_panel("step1_calibration", expanded=False)
+    with st.expander(
+        "What is currently set by the user for Human vs AI Standard Values",
+        expanded=False,
+    ):
+        render_standard_legend_table(
+            "What is currently set by the user for Human vs AI Standard Values"
+        )
+    with st.expander(
+        "What actually is set globally (default values)",
+        expanded=False,
+    ):
+        render_global_standard_table(
+            "What actually is set globally (default values)"
+        )
     st.markdown("---")
     
     col1, col2 = st.columns(2)
@@ -830,19 +836,20 @@ def render_step_2_metrics():
                 "Edited score": f"{scores['edited'][key]:.2f}",
                 "Edited label": labels["edited"][key],
             })
-        st.markdown(f"#### {title}")
         st.table(rows)
 
-    render_calibration_table(
-        "Default Calibration (no manual adjustments)",
-        calibration_payload["scores"]["default"],
-        calibration_payload["labels"]["default"],
-    )
-    render_calibration_table(
-        "Adjusted Calibration (manual settings)",
-        calibration_payload["scores"]["adjusted"],
-        calibration_payload["labels"]["adjusted"],
-    )
+    with st.expander("Default Calibration (no manual adjustments)", expanded=False):
+        render_calibration_table(
+            "Default Calibration (no manual adjustments)",
+            calibration_payload["scores"]["default"],
+            calibration_payload["labels"]["default"],
+        )
+    with st.expander("Adjusted Calibration (manual settings)", expanded=False):
+        render_calibration_table(
+            "Adjusted Calibration (manual settings)",
+            calibration_payload["scores"]["adjusted"],
+            calibration_payload["labels"]["adjusted"],
+        )
 
     impact_rows = []
     for spec in _calibration_specs():
@@ -852,8 +859,8 @@ def render_step_2_metrics():
             "Original score Δ": f"{calibration_payload['impact']['original'][key]:+.2f}",
             "Edited score Δ": f"{calibration_payload['impact']['edited'][key]:+.2f}",
         })
-    st.markdown("#### Calibration Impact (Adjusted - Default)")
-    st.table(impact_rows)
+    with st.expander("Calibration Impact (Adjusted - Default)", expanded=False):
+        st.table(impact_rows)
 
     st.caption(calibration_payload["notes"]["impact"])
 
