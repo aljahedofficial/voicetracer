@@ -553,12 +553,12 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
             3. **Visualize** the differences with charts
             4. **Export** reports in multiple formats
             """)
-                        st.markdown("""
-                        **Developer:**  
-                        Architect & Prompt Engineer: Minhaj Al Jahed  
-                        AI Engineering Support: GitHub Copilot Pro  
-                        Autocompletion & Debugging: GitHub Codespaces
-                        """)
+            st.markdown("""
+            **Developer:**  
+            Architect & Prompt Engineer: Minhaj Al Jahed  
+            AI Engineering Support: GitHub Copilot Pro  
+            Autocompletion & Debugging: GitHub Codespaces
+            """)
         
         st.markdown("---")
         st.caption("Made for thesis research on stylistic homogenization in L2 writing")
