@@ -217,6 +217,46 @@ def _label_from_score(score: float) -> str:
     return "AI-like"
 
 
+def _final_verdict_from_scores(original_score: float, edited_score: float, threshold: float = 0.05) -> str:
+    if edited_score < (original_score - threshold):
+        return "Voice shift detected"
+    return "Authorial voice retained"
+
+
+def _build_metric_verdicts(result: AnalysisResult, calibration_payload: dict, threshold: float = 0.05) -> dict:
+    verdicts = {}
+    adjusted = calibration_payload.get("adjusted", {})
+    human = adjusted.get("human", {})
+    ai = adjusted.get("ai", {})
+
+    for spec in _calibration_specs():
+        key = spec["key"]
+        orig_val = getattr(result.original_metrics, key)
+        edit_val = getattr(result.edited_metrics, key)
+        human_val = human.get(key, 0.0)
+        ai_val = ai.get(key, 0.0)
+
+        orig_score = _score_against_standards(orig_val, human_val, ai_val)
+        edit_score = _score_against_standards(edit_val, human_val, ai_val)
+        verdicts[key] = _final_verdict_from_scores(orig_score, edit_score, threshold=threshold)
+
+    return verdicts
+
+
+def _render_next_step_button(current_step: int, is_ready: bool = True) -> None:
+    label = "Go to Next Step →"
+    if current_step < 4:
+        clicked = st.button(label, key=f"next_step_{current_step}", disabled=not is_ready)
+        if clicked:
+            st.session_state.nav_step = current_step + 1
+            st.rerun()
+        if not is_ready:
+            st.caption("Complete the current step to continue.")
+    else:
+        st.button(label, key="next_step_4", disabled=True)
+        st.caption("You're on the final step.")
+
+
 def _build_calibration_payload(result: AnalysisResult) -> dict:
     _ensure_calibration_state()
     default_vals = _get_default_calibration_values()
@@ -665,6 +705,9 @@ def render_step_1_input():
             
             st.success("✓ Analysis complete! Go to Step 2 to view metrics.")
 
+    st.markdown("---")
+    _render_next_step_button(1, is_ready='analysis_result' in st.session_state)
+
 
 # ============================================================================
 # STEP 2: METRICS DASHBOARD
@@ -768,6 +811,7 @@ def render_step_2_metrics():
     st.markdown("### Calibration-Based Scores")
     calibration_payload = _build_calibration_payload(result)
     st.caption(calibration_payload["notes"]["scale"])
+    verdicts = _build_metric_verdicts(result, calibration_payload)
 
     def render_calibration_table(title: str, scores: dict, labels: dict) -> None:
         rows = []
@@ -851,6 +895,9 @@ def render_step_2_metrics():
             "Consider restoring some of your original sentence variety while keeping AI improvements. "
             "Your authentic voice often includes natural length variation."
         )
+
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['burstiness']}**")
     
     with tab_lex:
         st.markdown("#### What It Is")
@@ -880,6 +927,9 @@ def render_step_2_metrics():
             "Keep some of your original less-common vocabulary. "
             "It shows your authentic voice and demonstrates vocabulary growth."
         )
+
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['lexical_diversity']}**")
     
     with tab_syn:
         st.markdown("#### What It Is")
@@ -908,6 +958,9 @@ def render_step_2_metrics():
             "Review the AI's structural simplifications. "
             "Keep complex sentences that were grammatically correct and show your advancing skills."
         )
+
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['syntactic_complexity']}**")
     
     with tab_ai:
         st.markdown("#### What It Is")
@@ -940,6 +993,9 @@ def render_step_2_metrics():
             "Revert some suggestions, especially openings and closings where your voice matters most."
         )
 
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['ai_ism_likelihood']}**")
+
     with tab_fwr:
         st.markdown("#### What It Is")
         st.info(
@@ -970,6 +1026,9 @@ def render_step_2_metrics():
             "If the ratio rose, the edited text may be over-scaffolded. "
             "Consider tightening phrases or restoring content-heavy wording."
         )
+
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['function_word_ratio']}**")
 
     with tab_dmd:
         st.markdown("#### What It Is")
@@ -1002,6 +1061,9 @@ def render_step_2_metrics():
             "and letting ideas flow without constant signposting."
         )
 
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['discourse_marker_density']}**")
+
     with tab_id:
         st.markdown("#### What It Is")
         st.info(
@@ -1032,6 +1094,9 @@ def render_step_2_metrics():
             "If density dropped, consider reintroducing concrete details and specific terms."
         )
 
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['information_density']}**")
+
     with tab_hedge:
         st.markdown("#### What It Is")
         st.info(
@@ -1061,6 +1126,12 @@ def render_step_2_metrics():
         st.warning(
             "If hedging decreased, consider restoring nuanced language where appropriate."
         )
+
+        st.markdown("#### Final Verdict")
+        st.markdown(f"**Final Verdict: {verdicts['epistemic_hedging']}**")
+
+    st.markdown("---")
+    _render_next_step_button(2, is_ready=True)
 
 
 # ============================================================================
@@ -1385,6 +1456,9 @@ def render_step_3_visualize():
         st.error(f"Error generating visualization: {str(e)}")
         st.info("The visualization modules are working, but there may be data format issues.")
 
+    st.markdown("---")
+    _render_next_step_button(3, is_ready=True)
+
 
 # ============================================================================
 # STEP 4: EXPORT
@@ -1468,6 +1542,8 @@ def render_step_4_export():
                     include_edited_text=include_edited,
                     include_metrics=include_metrics,
                     include_ai_isms=include_ai_isms,
+                    include_charts=include_charts,
+                    include_benchmarks=include_benchmarks,
                     calibration=calibration_payload,
                 )
                 
@@ -1560,6 +1636,9 @@ def render_step_4_export():
         
         **PDF**: Best for sharing and archiving. Professional formatted document ready for publication.
         """)
+
+    st.markdown("---")
+    _render_next_step_button(4, is_ready=True)
 
 
 # ============================================================================

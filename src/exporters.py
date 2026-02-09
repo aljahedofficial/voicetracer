@@ -11,14 +11,23 @@ from pathlib import Path
 from typing import Dict, List, Any, BinaryIO
 from datetime import datetime
 import pandas as pd
+import plotly.io as pio
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
 from reportlab.lib import colors
+from metrics_spec import MetricType, normalize_metric
+from visualizations import (
+    RadarChartGenerator,
+    BarChartGenerator,
+    DeltaVisualization,
+    BurstinessVisualization,
+    IndividualMetricCharts,
+)
 
 
 class ExportMetadata:
@@ -95,6 +104,77 @@ class ExportMetadata:
             metadata['calibration'] = calibration
 
         return metadata
+
+
+def _score_against_standards(value: float, human: float, ai: float) -> float:
+    if human == ai:
+        return 0.5
+    score = (value - ai) / (human - ai)
+    return max(0.0, min(score, 1.0))
+
+
+def _build_metric_verdicts(analysis_result, calibration: Dict = None, threshold: float = 0.05) -> Dict[str, str]:
+    verdicts = {}
+    calibration = calibration or {}
+    adjusted = calibration.get("adjusted", calibration.get("default", {}))
+    human = adjusted.get("human", {})
+    ai = adjusted.get("ai", {})
+
+    metric_keys = [
+        "burstiness",
+        "lexical_diversity",
+        "syntactic_complexity",
+        "ai_ism_likelihood",
+        "function_word_ratio",
+        "discourse_marker_density",
+        "information_density",
+        "epistemic_hedging",
+    ]
+
+    for key in metric_keys:
+        orig_val = getattr(analysis_result.original_metrics, key)
+        edit_val = getattr(analysis_result.edited_metrics, key)
+        human_val = human.get(key, 0.0)
+        ai_val = ai.get(key, 0.0)
+
+        orig_score = _score_against_standards(orig_val, human_val, ai_val)
+        edit_score = _score_against_standards(edit_val, human_val, ai_val)
+        if edit_score < (orig_score - threshold):
+            verdicts[key] = "Voice shift detected"
+        else:
+            verdicts[key] = "Authorial voice retained"
+
+    return verdicts
+
+
+def _normalized_metric_dict(metric_scores) -> Dict[str, float]:
+    return {
+        "burstiness": normalize_metric(metric_scores.burstiness, MetricType.BURSTINESS),
+        "lexical_diversity": normalize_metric(metric_scores.lexical_diversity, MetricType.LEXICAL_DIVERSITY),
+        "syntactic_complexity": normalize_metric(metric_scores.syntactic_complexity, MetricType.SYNTACTIC_COMPLEXITY),
+        "ai_ism_likelihood": normalize_metric(metric_scores.ai_ism_likelihood, MetricType.AI_ISM_LIKELIHOOD),
+        "function_word_ratio": normalize_metric(metric_scores.function_word_ratio, MetricType.FUNCTION_WORD_RATIO),
+        "discourse_marker_density": normalize_metric(metric_scores.discourse_marker_density, MetricType.DISCOURSE_MARKER_DENSITY),
+        "information_density": normalize_metric(metric_scores.information_density, MetricType.INFORMATION_DENSITY),
+        "epistemic_hedging": normalize_metric(metric_scores.epistemic_hedging, MetricType.EPISTEMIC_HEDGING),
+    }
+
+
+def _raw_metric_dict(metric_scores) -> Dict[str, float]:
+    return {
+        "burstiness_raw": metric_scores.burstiness,
+        "lexical_diversity_raw": metric_scores.lexical_diversity,
+        "syntactic_complexity_raw": metric_scores.syntactic_complexity,
+        "ai_ism_likelihood_raw": metric_scores.ai_ism_likelihood,
+        "function_word_ratio_raw": metric_scores.function_word_ratio,
+        "discourse_marker_density_raw": metric_scores.discourse_marker_density,
+        "information_density_raw": metric_scores.information_density,
+        "epistemic_hedging_raw": metric_scores.epistemic_hedging,
+    }
+
+
+def _plotly_to_image(fig, width: int = 1200, height: int = 800, scale: int = 2) -> bytes:
+    return pio.to_image(fig, format="png", width=width, height=height, scale=scale)
 
 
 class CSVExporter:
@@ -441,6 +521,33 @@ class PDFExporter:
         story.append(metrics_table)
         story.append(Spacer(1, 0.3*inch))
 
+        verdicts = _build_metric_verdicts(analysis_result, options.get("calibration"))
+        verdict_rows = [
+            ['Metric', 'Final Verdict'],
+            ['Burstiness', verdicts.get('burstiness', 'Authorial voice retained')],
+            ['Lexical Diversity', verdicts.get('lexical_diversity', 'Authorial voice retained')],
+            ['Syntactic Complexity', verdicts.get('syntactic_complexity', 'Authorial voice retained')],
+            ['AI-ism Likelihood', verdicts.get('ai_ism_likelihood', 'Authorial voice retained')],
+            ['Function Word Ratio', verdicts.get('function_word_ratio', 'Authorial voice retained')],
+            ['Discourse Marker Density', verdicts.get('discourse_marker_density', 'Authorial voice retained')],
+            ['Information Density', verdicts.get('information_density', 'Authorial voice retained')],
+            ['Epistemic Hedging', verdicts.get('epistemic_hedging', 'Authorial voice retained')],
+        ]
+        verdict_table = Table(verdict_rows, colWidths=[2.2*inch, 3.8*inch])
+        verdict_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#444444')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        story.append(Paragraph("Final Verdicts", styles['Heading2']))
+        story.append(verdict_table)
+        story.append(Spacer(1, 0.3*inch))
+
         calibration = options.get('calibration')
         if calibration:
             story.append(Paragraph("Calibration Standards", styles['Heading2']))
@@ -491,6 +598,71 @@ class PDFExporter:
                 for text in notes.values():
                     story.append(Paragraph(text, styles['Normal']))
                 story.append(Spacer(1, 0.2*inch))
+
+        include_charts = options.get("include_charts", False)
+        if include_charts:
+            story.append(PageBreak())
+            story.append(Paragraph("Visualizations", styles['Heading2']))
+
+            def add_chart(fig, title, width=6.5*inch, height=4.0*inch):
+                story.append(Paragraph(title, styles['Heading3']))
+                try:
+                    img_bytes = _plotly_to_image(fig)
+                    img = Image(io.BytesIO(img_bytes))
+                    img.drawWidth = width
+                    img.drawHeight = height
+                    story.append(img)
+                except Exception:
+                    story.append(Paragraph(f"{title} (chart unavailable)", styles['Normal']))
+                story.append(Spacer(1, 0.2*inch))
+
+            radar_orig = _normalized_metric_dict(analysis_result.original_metrics)
+            radar_edit = _normalized_metric_dict(analysis_result.edited_metrics)
+            bar_orig = _raw_metric_dict(analysis_result.original_metrics)
+            bar_edit = _raw_metric_dict(analysis_result.edited_metrics)
+            deltas_dict = {
+                'burstiness_pct_change': analysis_result.metric_deltas.burstiness_pct_change,
+                'lexical_diversity_pct_change': analysis_result.metric_deltas.lexical_diversity_pct_change,
+                'syntactic_complexity_pct_change': analysis_result.metric_deltas.syntactic_complexity_pct_change,
+                'ai_ism_likelihood_pct_change': analysis_result.metric_deltas.ai_ism_pct_change,
+                'function_word_ratio_pct_change': analysis_result.metric_deltas.function_word_ratio_pct_change,
+                'discourse_marker_density_pct_change': analysis_result.metric_deltas.discourse_marker_density_pct_change,
+                'information_density_pct_change': analysis_result.metric_deltas.information_density_pct_change,
+                'epistemic_hedging_pct_change': analysis_result.metric_deltas.epistemic_hedging_pct_change,
+            }
+
+            add_chart(
+                RadarChartGenerator.create_metric_radar(radar_orig, radar_edit),
+                "8-Axis Radar Chart",
+            )
+            add_chart(
+                BarChartGenerator.create_metric_comparison(bar_orig, bar_edit),
+                "Metric Comparison (Bar Chart)",
+            )
+            add_chart(
+                DeltaVisualization.create_delta_chart(deltas_dict),
+                "Metric Shifts (Delta Chart)",
+            )
+
+            burst_bar_fig, _ = BurstinessVisualization.create_sentence_length_bars(
+                doc_pair.original_text,
+                doc_pair.edited_text,
+            )
+            add_chart(burst_bar_fig, "Burstiness: Word Count per Sentence", height=3.6*inch)
+            add_chart(
+                BurstinessVisualization.create_fluctuation_curve(
+                    doc_pair.original_text,
+                    doc_pair.edited_text,
+                ),
+                "Burstiness: Fluctuation Pattern",
+                height=3.6*inch,
+            )
+
+            story.append(PageBreak())
+            story.append(Paragraph("Individual Metric Charts", styles['Heading2']))
+            panels = IndividualMetricCharts.create_metric_panels(bar_orig, bar_edit)
+            for name, fig in panels:
+                add_chart(fig, name, height=3.0*inch)
         
         # AI-isms detected
         if analysis_result.ai_isms:
