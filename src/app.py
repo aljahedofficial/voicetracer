@@ -244,12 +244,18 @@ def _build_metric_verdicts(result: AnalysisResult, calibration_payload: dict, th
 
 
 def _render_next_step_button(current_step: int, is_ready: bool = True) -> None:
+    def _request_step(step: int) -> None:
+        st.session_state["pending_nav_step"] = step
+
     label = "Go to Next Step →"
     if current_step < 4:
-        clicked = st.button(label, key=f"next_step_{current_step}", disabled=not is_ready)
-        if clicked:
-            st.session_state.nav_step = current_step + 1
-            st.rerun()
+        st.button(
+            label,
+            key=f"next_step_{current_step}",
+            disabled=not is_ready,
+            on_click=_request_step,
+            args=(current_step + 1,),
+        )
         if not is_ready:
             st.caption("Complete the current step to continue.")
     else:
@@ -1649,6 +1655,10 @@ def main():
     # Initialize session state
     if 'nav_step' not in st.session_state:
         st.session_state.nav_step = 1
+
+    pending_step = st.session_state.pop("pending_nav_step", None)
+    if pending_step is not None:
+        st.session_state.nav_step = pending_step
     
     # Setup sidebar
     current_step = setup_sidebar()
