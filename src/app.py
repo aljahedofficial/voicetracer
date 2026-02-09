@@ -386,6 +386,15 @@ st.markdown("""
     
     /* Accessibility */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    /* Sidebar collapse button label */
+    button[data-testid="stSidebarCollapseButton"]::after,
+    button[data-testid="stSidebarCollapsedControl"]::after {
+        content: " Menu";
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 0.35rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -397,7 +406,7 @@ def setup_sidebar():
     """Setup sidebar navigation and settings."""
     with st.sidebar:
         st.markdown("## 🎙️ VoiceTracer")
-        st.caption("Build: 2026-02-06-1")
+        st.caption("Build: V1-09-02-26'")
         st.markdown("---")
         
         st.markdown("### About")
@@ -1669,6 +1678,17 @@ def main():
     
     # Setup sidebar
     current_step = setup_sidebar()
+
+    st.warning(
+        "This app is not a commercial AI detection tool. It doesn't guarantee 100% accuracy. "
+        "It is bulit for research purpose. A primary focus of this research is the potential "
+        "bias against L2 (non-native English) learners, whose formal and highly structured writing "
+        "styles are often misidentified as AI-generated. Visitors are cautioned that this tool may "
+        "flag human text as \"AI-like\" if the writer employs high levels of academic vocabulary or "
+        "repetitive syntactic patterns common in formal L2 prose. This analyzer is intended for "
+        "academic inquiry into the \"homogenization of voice\" by AI and should not be used as a "
+        "substitute for professional, commercial detection services."
+    )
     
     # Render appropriate step
     if current_step == 1:
