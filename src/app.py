@@ -122,6 +122,7 @@ def _calibration_specs() -> list[dict]:
 def render_calibration_panel(panel_key: str, expanded: bool = False) -> dict:
     _ensure_calibration_state()
     calib = st.session_state.calibration_values
+    defaults = _get_default_calibration_values()
 
     with st.expander("Manual Calibration", expanded=expanded):
         st.caption(
@@ -144,10 +145,12 @@ def render_calibration_panel(panel_key: str, expanded: bool = False) -> dict:
         updated_human = {}
         updated_ai = {}
         for spec in _calibration_specs():
+            default_human = spec["fmt"].format(defaults["human"].get(spec["key"], 0.0))
+            default_ai = spec["fmt"].format(defaults["ai"].get(spec["key"], 0.0))
             col1, col2 = st.columns(2)
             with col1:
                 updated_human[spec["key"]] = st.slider(
-                    f"{spec['label']} (Human standard)",
+                    f"{spec['label']} (Human standard) (default: {default_human})",
                     min_value=spec["min"],
                     max_value=spec["max"],
                     value=float(calib["human"][spec["key"]]),
@@ -156,7 +159,7 @@ def render_calibration_panel(panel_key: str, expanded: bool = False) -> dict:
                 )
             with col2:
                 updated_ai[spec["key"]] = st.slider(
-                    f"{spec['label']} (AI standard)",
+                    f"{spec['label']} (AI standard) (default: {default_ai})",
                     min_value=spec["min"],
                     max_value=spec["max"],
                     value=float(calib["ai"][spec["key"]]),
@@ -1569,7 +1572,7 @@ def render_step_4_export():
     st.markdown("---")
     
     if st.button("📥 Generate & Download", type="primary"):
-        with st.spinner(f"Generating {selected_format.upper()} export..."):
+        with st.spinner("Processing. Just a minute."):
             try:
                 calibration_payload = _build_calibration_payload(result)
                 # Calculate text metadata
