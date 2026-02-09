@@ -614,6 +614,8 @@ class PDFExporter:
             story.append(PageBreak())
             story.append(Paragraph("Visualizations", styles['Heading2']))
 
+            chart_errors: List[str] = []
+
             def add_chart(fig, title, width=6.5*inch, height=4.0*inch):
                 story.append(Paragraph(title, styles['Heading3']))
                 try:
@@ -622,7 +624,9 @@ class PDFExporter:
                     img.drawWidth = width
                     img.drawHeight = height
                     story.append(img)
-                except Exception:
+                except Exception as exc:
+                    error_text = f"{type(exc).__name__}: {str(exc)}"
+                    chart_errors.append(f"{title} -> {error_text}")
                     story.append(Paragraph(f"{title} (chart unavailable)", styles['Normal']))
                 story.append(Spacer(1, 0.2*inch))
 
@@ -673,6 +677,12 @@ class PDFExporter:
             panels = IndividualMetricCharts.create_metric_panels(bar_orig, bar_edit)
             for name, fig in panels:
                 add_chart(fig, name, height=3.0*inch)
+
+            if chart_errors:
+                story.append(PageBreak())
+                story.append(Paragraph("Visualization Export Errors", styles['Heading2']))
+                for text in chart_errors:
+                    story.append(Paragraph(text, styles['Normal']))
         
         # AI-isms detected
         if analysis_result.ai_isms:
