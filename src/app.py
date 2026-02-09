@@ -129,6 +129,18 @@ def render_calibration_panel(panel_key: str, expanded: bool = False) -> dict:
             "Settings are saved for this session only."
         )
 
+        if st.button("Reset to defaults", key=f"{panel_key}_reset"):
+            defaults = _get_calibration_defaults()
+            st.session_state.calibration_values = defaults
+            for spec in _calibration_specs():
+                st.session_state[f"{panel_key}_human_{spec['key']}"] = float(
+                    defaults["human"][spec["key"]]
+                )
+                st.session_state[f"{panel_key}_ai_{spec['key']}"] = float(
+                    defaults["ai"][spec["key"]]
+                )
+            st.rerun()
+
         updated_human = {}
         updated_ai = {}
         for spec in _calibration_specs():
