@@ -61,8 +61,7 @@ Reliability and limitations
 - This is a research prototype, not a commercial AI detection tool.
 - It does not guarantee 100% accuracy and should not be used as proof of authorship.
 - Short texts can reduce reliability of several metrics.
-- Results are best used as indicators for learning and analysis, not as final judgments.
-
+- Results are best used as indicators for learning and analysis, not as final judgm
 Developer:
 Architect & Prompt Engineer: Minhaj Al Jahed
 AI Engineering Support: GitHub Copilot Pro

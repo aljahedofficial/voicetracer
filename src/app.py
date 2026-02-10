@@ -570,28 +570,20 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
                                 gap: 6px;
                                 text-decoration: none;
                                 font-weight: 600;
+                                color: #000080;
                             }
                             .vt-profile-link:hover {
                                 text-decoration: underline;
-                            }
-                            .vt-linkedin-link {
-                                color: #0a66c2;
                             }
                             .vt-linkedin-icon {
                                 width: 16px;
                                 height: 16px;
                                 fill: #0a66c2;
                             }
-                            .vt-researchgate-link {
-                                color: #00ccbb;
-                            }
                             .vt-researchgate-icon {
                                 width: 16px;
                                 height: 16px;
                                 fill: #00ccbb;
-                            }
-                            .vt-x-link {
-                                color: #111111;
                             }
                             .vt-x-icon {
                                 width: 16px;
