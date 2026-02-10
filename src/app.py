@@ -563,8 +563,34 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
         components.html(
             """
             <script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
+                        <style>
+                            .vt-linkedin-link {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                                text-decoration: none;
+                                color: #0a66c2;
+                                font-weight: 600;
+                            }
+                            .vt-linkedin-link:hover {
+                                text-decoration: underline;
+                            }
+                            .vt-linkedin-icon {
+                                width: 16px;
+                                height: 16px;
+                                fill: #0a66c2;
+                            }
+                        </style>
+                        <div style="margin-bottom: 8px;">
+                            <a class="vt-linkedin-link" href="https://bd.linkedin.com/in/minhaj10" target="_blank" rel="noopener noreferrer">
+                                <svg class="vt-linkedin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M20.45 20.45h-3.56v-5.4c0-1.29-.02-2.96-1.8-2.96-1.8 0-2.08 1.41-2.08 2.87v5.49H9.45V9h3.42v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.47v6.27ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM7.12 20.45H3.56V9h3.56v11.45Z"/>
+                                </svg>
+                                Minhaj Al Jahed
+                            </a>
+                        </div>
             <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="light" data-type="VERTICAL" data-vanity="minhaj10" data-version="v1">
-                <a class="badge-base__link LI-simple-link" href="https://bd.linkedin.com/in/minhaj10?trk=profile-badge">Minhaj Al Jahed</a>
+                                <a class="badge-base__link LI-simple-link" href="https://bd.linkedin.com/in/minhaj10?trk=profile-badge" target="_blank" rel="noopener noreferrer">Minhaj Al Jahed</a>
             </div>
             """,
             height=320,
