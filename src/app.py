@@ -583,7 +583,7 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
                             .vt-researchgate-icon {
                                 width: 16px;
                                 height: 16px;
-                                fill: #00ccbb;
+                                color: #0b2a2a;
                             }
                             .vt-x-icon {
                                 width: 16px;
@@ -602,7 +602,8 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
                         <div>
                             <a class="vt-profile-link vt-researchgate-link" href="https://www.researchgate.net/profile/Minhaj-Al-Jahed-2?ev=hdr_xprf" target="_blank" rel="noopener noreferrer">
                                 <svg class="vt-researchgate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M20.7 10.9c0-3.8-3.2-6.9-7.1-6.9H7.3C5 4 3.1 5.9 3.1 8.2V16c0 2.2 1.8 4 4.1 4h7.6c3.2 0 5.9-2.5 5.9-5.6 0-1.2-.4-2.3-1.1-3.1.7-.8 1.1-1.9 1.1-3.4ZM7.3 7h6.2c2.2 0 4 1.7 4 3.9 0 1.8-1.2 3.1-3 3.1h-4.6v-2.1h3.6c1 0 1.6-.6 1.6-1.4 0-.9-.7-1.6-1.7-1.6H7.3C6.6 9 6 9.6 6 10.3v5.8c0 .7.6 1.3 1.3 1.3h7.6c1.6 0 2.9-1.2 2.9-2.8 0-1.2-.7-2.2-2.1-2.2h-3.5v-2.1h4c2 0 2.5-1.2 2.5-2.4 0-1.7-1.5-2.9-3.2-2.9H7.3Z"/>
+                                    <text x="2" y="18" font-size="18" font-family="Times New Roman, serif" font-weight="700" fill="currentColor">R</text>
+                                    <text x="14" y="8" font-size="10" font-family="Times New Roman, serif" font-weight="700" fill="currentColor">G</text>
                                 </svg>
                                 Minhaj Al Jahed
                             </a>
