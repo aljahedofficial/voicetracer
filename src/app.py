@@ -5,6 +5,7 @@ Main entry point. Implements the 4-step dashboard workflow.
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import sys
 from pathlib import Path
 import PyPDF2
@@ -553,12 +554,21 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
             3. **Visualize** the differences with charts
             4. **Export** reports in multiple formats
             """)
-            st.markdown("""
-            **Developer:**  
-            Architect & Prompt Engineer: Minhaj Al Jahed  
-            AI Engineering Support: GitHub Copilot Pro  
-            Autocompletion & Debugging: GitHub Codespaces
-            """)
+        st.markdown("""
+        **Developer:**  
+        Architect & Prompt Engineer: Minhaj Al Jahed  
+        AI Engineering Support: GitHub Copilot Pro  
+        Autocompletion & Debugging: GitHub Codespaces
+        """)
+        components.html(
+            """
+            <script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
+            <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="light" data-type="VERTICAL" data-vanity="minhaj10" data-version="v1">
+                <a class="badge-base__link LI-simple-link" href="https://bd.linkedin.com/in/minhaj10?trk=profile-badge">Minhaj Al Jahed</a>
+            </div>
+            """,
+            height=320,
+        )
         
         st.markdown("---")
         st.caption("Made for thesis research on stylistic homogenization in L2 writing")

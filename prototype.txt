@@ -62,3 +62,8 @@ Reliability and limitations
 - It does not guarantee 100% accuracy and should not be used as proof of authorship.
 - Short texts can reduce reliability of several metrics.
 - Results are best used as indicators for learning and analysis, not as final judgments.
+
+Developer:
+Architect & Prompt Engineer: Minhaj Al Jahed
+AI Engineering Support: GitHub Copilot Pro
+Autocompletion & Debugging: GitHub Codespaces
