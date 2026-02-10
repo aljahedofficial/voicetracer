@@ -113,7 +113,24 @@ def _score_against_standards(value: float, human: float, ai: float) -> float:
     return max(0.0, min(score, 1.0))
 
 
-def _build_metric_verdicts(analysis_result, calibration: Dict = None, threshold: float = 0.05) -> Dict[str, str]:
+def _position_against_standards(value: float, human: float, ai: float) -> float:
+    if human == ai:
+        return 0.5
+    position = (value - human) / (ai - human)
+    return max(0.0, min(position, 1.0))
+
+
+def _verdict_from_shift(shift: float) -> str:
+    if abs(shift) < 0.15:
+        return "Preserved (minimal change)"
+    if shift > 0.30:
+        return "Compromised (significant homogenization)"
+    if shift > 0.15:
+        return "Moderate shift (partial homogenization)"
+    return "Enhanced (toward human norm)"
+
+
+def _build_metric_verdicts(analysis_result, calibration: Dict = None) -> Dict[str, str]:
     verdicts = {}
     calibration = calibration or {}
     adjusted = calibration.get("adjusted", calibration.get("default", {}))
@@ -137,12 +154,9 @@ def _build_metric_verdicts(analysis_result, calibration: Dict = None, threshold:
         human_val = human.get(key, 0.0)
         ai_val = ai.get(key, 0.0)
 
-        orig_score = _score_against_standards(orig_val, human_val, ai_val)
-        edit_score = _score_against_standards(edit_val, human_val, ai_val)
-        if edit_score < (orig_score - threshold):
-            verdicts[key] = "Voice shift detected"
-        else:
-            verdicts[key] = "Authorial voice retained"
+        orig_pos = _position_against_standards(orig_val, human_val, ai_val)
+        edit_pos = _position_against_standards(edit_val, human_val, ai_val)
+        verdicts[key] = _verdict_from_shift(edit_pos - orig_pos)
 
     return verdicts
 
