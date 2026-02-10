@@ -1634,6 +1634,19 @@ def render_step_4_export():
         include_metrics = st.checkbox("Include detailed metrics", value=True)
         include_ai_isms = st.checkbox("Include AI-ism analysis", value=True)
         include_benchmarks = st.checkbox("Include benchmark comparisons", value=True)
+
+    st.markdown("### Linguistic Investigation")
+    if "linguistic_investigation_open" not in st.session_state:
+        st.session_state.linguistic_investigation_open = False
+
+    if st.button("🔍 Search", key="linguistic_investigation"):
+        st.session_state.linguistic_investigation_open = True
+
+    if st.session_state.linguistic_investigation_open:
+        st.markdown(
+            '<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:6px;height:260px;"></div>',
+            unsafe_allow_html=True,
+        )
     
     st.markdown("---")
     
