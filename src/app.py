@@ -564,34 +564,65 @@ Why it matters: Human writing often hedges; AI text tends to sound overly certai
             """
             <script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
                         <style>
-                            .vt-linkedin-link {
+                            .vt-profile-link {
                                 display: inline-flex;
                                 align-items: center;
                                 gap: 6px;
                                 text-decoration: none;
-                                color: #0a66c2;
                                 font-weight: 600;
                             }
-                            .vt-linkedin-link:hover {
+                            .vt-profile-link:hover {
                                 text-decoration: underline;
+                            }
+                            .vt-linkedin-link {
+                                color: #0a66c2;
                             }
                             .vt-linkedin-icon {
                                 width: 16px;
                                 height: 16px;
                                 fill: #0a66c2;
                             }
+                            .vt-researchgate-link {
+                                color: #00ccbb;
+                            }
+                            .vt-researchgate-icon {
+                                width: 16px;
+                                height: 16px;
+                                fill: #00ccbb;
+                            }
+                            .vt-x-link {
+                                color: #111111;
+                            }
+                            .vt-x-icon {
+                                width: 16px;
+                                height: 16px;
+                                fill: #111111;
+                            }
                         </style>
                         <div style="margin-bottom: 8px;">
-                            <a class="vt-linkedin-link" href="https://bd.linkedin.com/in/minhaj10" target="_blank" rel="noopener noreferrer">
+                            <a class="vt-profile-link vt-linkedin-link" href="https://bd.linkedin.com/in/minhaj10" target="_blank" rel="noopener noreferrer">
                                 <svg class="vt-linkedin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                     <path d="M20.45 20.45h-3.56v-5.4c0-1.29-.02-2.96-1.8-2.96-1.8 0-2.08 1.41-2.08 2.87v5.49H9.45V9h3.42v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.47v6.27ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM7.12 20.45H3.56V9h3.56v11.45Z"/>
                                 </svg>
                                 Minhaj Al Jahed
                             </a>
                         </div>
-            <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="light" data-type="VERTICAL" data-vanity="minhaj10" data-version="v1">
-                                <a class="badge-base__link LI-simple-link" href="https://bd.linkedin.com/in/minhaj10?trk=profile-badge" target="_blank" rel="noopener noreferrer">Minhaj Al Jahed</a>
-            </div>
+                        <div>
+                            <a class="vt-profile-link vt-researchgate-link" href="https://www.researchgate.net/profile/Minhaj-Al-Jahed-2?ev=hdr_xprf" target="_blank" rel="noopener noreferrer">
+                                <svg class="vt-researchgate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M20.7 10.9c0-3.8-3.2-6.9-7.1-6.9H7.3C5 4 3.1 5.9 3.1 8.2V16c0 2.2 1.8 4 4.1 4h7.6c3.2 0 5.9-2.5 5.9-5.6 0-1.2-.4-2.3-1.1-3.1.7-.8 1.1-1.9 1.1-3.4ZM7.3 7h6.2c2.2 0 4 1.7 4 3.9 0 1.8-1.2 3.1-3 3.1h-4.6v-2.1h3.6c1 0 1.6-.6 1.6-1.4 0-.9-.7-1.6-1.7-1.6H7.3C6.6 9 6 9.6 6 10.3v5.8c0 .7.6 1.3 1.3 1.3h7.6c1.6 0 2.9-1.2 2.9-2.8 0-1.2-.7-2.2-2.1-2.2h-3.5v-2.1h4c2 0 2.5-1.2 2.5-2.4 0-1.7-1.5-2.9-3.2-2.9H7.3Z"/>
+                                </svg>
+                                Minhaj Al Jahed
+                            </a>
+                        </div>
+                        <div style="margin-top: 6px;">
+                            <a class="vt-profile-link vt-x-link" href="https://x.com/MinhajAl51253" target="_blank" rel="noopener noreferrer">
+                                <svg class="vt-x-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M18.9 2H22l-7.2 8.2L23 22h-6.7l-5.2-6.8L5.2 22H2l7.7-8.8L1 2h6.8l4.7 6.1L18.9 2Zm-1.2 18h1.8L7.3 4H5.3l12.4 16Z"/>
+                                </svg>
+                                Minhaj Al Jahed
+                            </a>
+                        </div>
             """,
             height=320,
         )
